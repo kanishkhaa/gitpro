@@ -47,7 +47,7 @@ A powerful suite of developer tools that leverages LLMs to boost code quality, d
 ## 📦 Installation
 
 ```bash
-git clone https://github.com/your-org/devassist-ai-suite.git
+git clone "https://github.com/kanishkhaa/gitpro"
 cd devassist-ai-suite
 python -m venv venv
 source venv/bin/activate

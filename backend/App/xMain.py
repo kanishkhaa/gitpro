@@ -3,6 +3,8 @@ from productivity import get_productivity_metrics
 from commit_analyzer import analyze_commit
 from doc_generator import generate_docs
 from security import scan_security
+from git_history import generate_history_summary
+from onboarding import onboarding_assistant
 
 def main():
     print("🚀 GitHub AI Code Analyzer")
@@ -13,12 +15,14 @@ def main():
     print("3: Commit Intent Analyzer (analyzes most recent commit)")
     print("4: AI-Powered Documentation Generator (for recent files)")
     print("5: Security Scan with AI (scans most recent PR)")
+    print("6: Visual Git History + Repository Summary (entire history)")
+    print("7: Onboarding Assistant (understand repo structure and file purposes)")
     print("-" * 40)
 
     try:
-        choice = input("Enter choice (1-5): ").strip()
-        if choice not in ["1", "2", "3", "4", "5"]:
-            print("❌ Invalid choice. Please select 1-5.")
+        choice = input("Enter choice (1-7): ").strip()
+        if choice not in ["1", "2", "3", "4", "5", "6", "7"]:
+            print("❌ Invalid choice. Please select 1-7.")
             return
 
         repo = input("Enter GitHub repo (owner/repo): ").strip()
@@ -36,6 +40,10 @@ def main():
             generate_docs(repo)
         elif choice == "5":
             scan_security(repo)
+        elif choice == "6":
+            generate_history_summary(repo)
+        elif choice == "7":
+            onboarding_assistant(repo)
 
     except KeyboardInterrupt:
         print("\n\n👋 Goodbye!")

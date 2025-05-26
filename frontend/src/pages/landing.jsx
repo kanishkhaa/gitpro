@@ -173,59 +173,62 @@ const LandingPage = () => {
 
       {/* Hero Section */}
       <section className="relative z-10 px-8 py-24 md:py-32">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start gap-12">
-          <div className="w-full md:w-1/2 text-left">
-            <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-full px-4 py-2 mb-8 border border-white/20">
-              <Star className="w-4 h-4 text-yellow-300" />
-              <span className="text-sm text-gray-200">Trusted by 10,000+ developers worldwide</span>
+        <div className="max-w-7xl mx-auto">
+          {/* Text and Animation Row */}
+          <div className="flex flex-col md:flex-row items-start gap-12">
+            <div className="w-full md:w-1/2 text-left">
+              <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-lg rounded-full px-4 py-2 mb-8 border border-white/20">
+                <Star className="w-4 h-4 text-yellow-300" />
+                <span className="text-sm text-gray-200">Trusted by 10,000+ developers worldwide</span>
+              </div>
+              
+              <h1 className="text-4xl md:text-6xl font-bold mb-8 bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent leading-tight">
+                The Future of
+                <br />
+                <span className="bg-gradient-to-r from-blue-300 via-purple-300 to-teal-300 bg-clip-text text-transparent">
+                  AI {typewriterText}
+                </span>
+                <span className="animate-pulse text-blue-300 drop-shadow-md">|</span>
+              </h1>
+              
+              <p className="text-lg md:text-xl text-gray-200 mb-12 max-w-2xl leading-relaxed">
+                Transform your development workflow with AI-powered code reviews, security scanning, 
+                documentation generation, and team insights. Built for modern development teams.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-6 mb-16">
+                <button className="group bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-4 rounded-full text-lg font-semibold hover:from-blue-400 hover:to-purple-400 transition-all transform hover:scale-105 animate-pulse-subtle flex items-center space-x-2">
+                  <Github className="w-5 h-5" />
+                  <span>Connect with GitHub</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </button>
+                <button className="px-8 py-4 rounded-full text-lg font-semibold border border-white/20 hover:bg-white/10 transition-all">
+                  Watch Demo
+                </button>
+              </div>
             </div>
-            
-            <h1 className="text-4xl md:text-6xl font-bold mb-8 bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent leading-tight">
-              The Future of
-              <br />
-              <span className="bg-gradient-to-r from-blue-300 via-purple-300 to-teal-300 bg-clip-text text-transparent">
-                AI {typewriterText}
-              </span>
-              <span className="animate-pulse text-blue-300 drop-shadow-md">|</span>
-            </h1>
-            
-            <p className="text-lg md:text-xl text-gray-200 mb-12 max-w-2xl leading-relaxed">
-              Transform your development workflow with AI-powered code reviews, security scanning, 
-              documentation generation, and team insights. Built for modern development teams.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-6 mb-16">
-              <button className="group bg-gradient-to-r from-blue-500 to-purple-500 px-8 py-4 rounded-full text-lg font-semibold hover:from-blue-400 hover:to-purple-400 transition-all transform hover:scale-105 animate-pulse-subtle flex items-center space-x-2">
-                <Github className="w-5 h-5" />
-                <span>Connect with GitHub</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button className="px-8 py-4 rounded-full text-lg font-semibold border border-white/20 hover:bg-white/10 transition-all">
-                Watch Demo
-              </button>
-            </div>
-
-            {/* Stats */}
-            <div className="mx-auto max-w-3xl">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-                {stats.map((stat, index) => (
-                  <div
-                    key={index}
-                    className="text-center bg-white/5 backdrop-blur-sm rounded-xl p-4 animate-scale-in"
-                    style={{ animationDelay: `${index * 200}ms` }}
-                  >
-                    <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent">
-                      {stat.value}
-                    </div>
-                    <div className="text-sm md:text-base text-gray-200 mt-2">{stat.label}</div>
-                  </div>
-                ))}
+            <div className="w-full md:w-1/2 flex justify-end mt-8 md:mt-0">
+              <div className={`w-[500px] h-[500px] md:w-[800px] md:h-[800px] pointer-events-none -mt-24 md:-mt-40 transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+                <Lottie animationData={landing} loop={true} />
               </div>
             </div>
           </div>
-          <div className="w-full md:w-1/2 flex justify-end mt-8 md:mt-0">
-            <div className={`w-[500px] h-[500px] md:w-[800px] md:h-[800px] pointer-events-none -mt-24 md:-mt-40 transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-              <Lottie animationData={landing} loop={true} />
+
+          {/* Centered Stats */}
+          <div className="mt-12 mx-auto max-w-4xl">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+              {stats.map((stat, index) => (
+                <div
+                  key={index}
+                  className="text-center bg-white/5 backdrop-blur-sm rounded-xl p-4 animate-scale-in"
+                  style={{ animationDelay: `${index * 200}ms` }}
+                >
+                  <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent">
+                    {stat.value}
+                  </div>
+                  <div className="text-sm md:text-base text-gray-200 mt-2">{stat.label}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

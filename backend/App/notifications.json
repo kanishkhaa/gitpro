@@ -1,0 +1,130 @@
+[
+  {
+    "repository": "Sbragul26/smartrx_deploy",
+    "event": "Push",
+    "actor": "Sbragul26",
+    "time": "2025-05-26T14:07:00Z",
+    "operation": "git push",
+    "updates": "Commit by Sbragul26: updated; Changes: Added: dummy.txt"
+  },
+  {
+    "repository": "Sbragul26/smartrx_deploy",
+    "event": "Push",
+    "actor": "Sbragul26",
+    "time": "2025-05-26T14:08:10Z",
+    "operation": "git push",
+    "updates": "Commit by Sbragul26: updated; Changes: Deleted: dummy.txt"
+  },
+  {
+    "repository": "Sbragul26/smartrx_deploy",
+    "event": "Push",
+    "actor": "Sbragul26",
+    "time": "2025-05-27T04:34:11Z",
+    "operation": "git push",
+    "updates": "Commit by Sbragul26: added dummy file; Changes: Added: dummy.txt"
+  },
+  {
+    "repository": "Sbragul26/smartrx_deploy",
+    "event": "Push",
+    "actor": "Sbragul26",
+    "time": "2025-05-27T04:38:31Z",
+    "operation": "git push",
+    "updates": "Commit by Sbragul26: executing; Changes: Renamed: exe.txt"
+  },
+  {
+    "repository": "Sbragul26/smartrx_deploy",
+    "event": "Push",
+    "actor": "Sbragul26",
+    "time": "2025-05-27T04:46:37Z",
+    "operation": "git push",
+    "updates": "Commit by Sbragul26: updated; Changes: Deleted: exe.txt"
+  },
+  {
+    "repository": "Sbragul26/smartrx_deploy",
+    "event": "Push",
+    "actor": "Sbragul26",
+    "time": "2025-05-27T04:50:07Z",
+    "operation": "git push",
+    "updates": "Commit by Sbragul26: working; Changes: Added: work.txt"
+  },
+  {
+    "repository": "kanishkhaa/gitpro",
+    "event": "Push",
+    "actor": "kanishkhaa",
+    "time": "2025-05-26T09:22:57Z",
+    "operation": "git push",
+    "updates": "Commit by kanishkhaa: landingpage; Changes: Modified: frontend/src/pages/landing.jsx"
+  },
+  {
+    "repository": "kanishkhaa/gitpro",
+    "event": "Push",
+    "actor": "kanishkhaa",
+    "time": "2025-05-26T13:32:10Z",
+    "operation": "git push",
+    "updates": "Commit by kanishkhaa: initial; Changes: Modified: frontend/package-lock.json, Modified: frontend/package.json, Modified: frontend/src/App.jsx, Added: frontend/src/components/sidebar.jsx, Added: frontend/src/pages/AICodeReview.jsx"
+  },
+  {
+    "repository": "kanishkhaa/gitpro",
+    "event": "Push",
+    "actor": "Sbragul26",
+    "time": "2025-05-26T13:57:49Z",
+    "operation": "git push",
+    "updates": "Commit by Sbragul26: updated backend; Changes: Added: backend"
+  },
+  {
+    "repository": "kanishkhaa/gitpro",
+    "event": "Push",
+    "actor": "Sbragul26",
+    "time": "2025-05-26T14:24:36Z",
+    "operation": "git push",
+    "updates": "Commit by Sbragul26: updated; Changes: Deleted: backend"
+  },
+  {
+    "repository": "kanishkhaa/gitpro",
+    "event": "Push",
+    "actor": "Sbragul26",
+    "time": "2025-05-26T14:25:40Z",
+    "operation": "git push",
+    "updates": "Commit by Sbragul26: updatedd; Changes: Added: backend/main.py"
+  },
+  {
+    "repository": "kanishkhaa/gitpro",
+    "event": "Push",
+    "actor": "Sbragul26",
+    "time": "2025-05-26T14:31:02Z",
+    "operation": "git push",
+    "updates": "Commit by Sbragul26: updated; Changes: Added: .gitignore"
+  },
+  {
+    "repository": "kanishkhaa/gitpro",
+    "event": "Push",
+    "actor": "Sbragul26",
+    "time": "2025-05-26T14:39:49Z",
+    "operation": "git push",
+    "updates": "Commit by Sbragul26: updated; Changes: Added: Readme.md"
+  },
+  {
+    "repository": "kanishkhaa/gitpro",
+    "event": "Push",
+    "actor": "Sbragul26",
+    "time": "2025-05-26T14:41:42Z",
+    "operation": "git push",
+    "updates": "Commit by Sbragul26: updated; Changes: Modified: Readme.md"
+  },
+  {
+    "repository": "kanishkhaa/gitpro",
+    "event": "Push",
+    "actor": "Sbragul26",
+    "time": "2025-05-26T17:34:08Z",
+    "operation": "git push",
+    "updates": "Commit by Sbragul26: updated backend; Changes: Added: backend/App/__pycache__/commit_analyzer.cpython-313.pyc, Added: backend/App/__pycache__/doc_generator.cpython-313.pyc, Added: backend/App/__pycache__/productivity.cpython-313.pyc, Added: backend/App/__pycache__/security.cpython-313.pyc, Added: backend/App/__pycache__/smartcode.cpython-313.pyc"
+  },
+  {
+    "repository": "kanishkhaa/gitpro",
+    "event": "Push",
+    "actor": "Sbragul26",
+    "time": "2025-05-26T17:46:47Z",
+    "operation": "git push",
+    "updates": "Commit by Sbragul26: updated backend; Changes: Added: backend/App/__pycache__/git_history.cpython-313.pyc, Added: backend/App/__pycache__/onboarding.cpython-313.pyc, Modified: backend/App/__pycache__/security.cpython-313.pyc, Added: backend/App/git_history.py, Added: backend/App/onboarding.py"
+  }
+]

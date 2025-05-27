@@ -5,6 +5,7 @@ from doc_generator import generate_docs
 from security import scan_security
 from git_history import generate_history_summary
 from onboarding import onboarding_assistant
+from activity_notifier import activity_notifier
 
 def main():
     print("🚀 GitHub AI Code Analyzer")
@@ -17,12 +18,13 @@ def main():
     print("5: Security Scan with AI (scans most recent PR)")
     print("6: Visual Git History + Repository Summary (entire history)")
     print("7: Onboarding Assistant (understand repo structure and file purposes)")
+    print("8: Activity Notifier (saves push, pull requests, issues, etc. to JSON and prints)")
     print("-" * 40)
 
     try:
-        choice = input("Enter choice (1-7): ").strip()
-        if choice not in ["1", "2", "3", "4", "5", "6", "7"]:
-            print("❌ Invalid choice. Please select 1-7.")
+        choice = input("Enter choice (1-8): ").strip()
+        if choice not in ["1", "2", "3", "4", "5", "6", "7", "8"]:
+            print("❌ Invalid choice. Please select 1-8.")
             return
 
         repo = input("Enter GitHub repo (owner/repo): ").strip()
@@ -44,6 +46,8 @@ def main():
             generate_history_summary(repo)
         elif choice == "7":
             onboarding_assistant(repo)
+        elif choice == "8":
+            activity_notifier(repo)
 
     except KeyboardInterrupt:
         print("\n\n👋 Goodbye!")

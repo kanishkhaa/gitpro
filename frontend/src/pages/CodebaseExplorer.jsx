@@ -17,14 +17,12 @@ import {
   File,
   TreePine,
   BookOpen,
-  Layers,
   Filter,
-  Download,
   Sparkles,
   ArrowRight
 } from 'lucide-react';
 
-const CodebaseExplorer = () => {
+const CodebaseExplorer = ({ isSidebarCollapsed }) => {
   const [repo, setRepo] = useState('');
   const [branch, setBranch] = useState('main');
   const [isLoading, setIsLoading] = useState(false);
@@ -285,7 +283,7 @@ const CodebaseExplorer = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white overflow-hidden">
+    <div className={`fixed top-0 right-0 bottom-0 transition-all duration-300 ${isSidebarCollapsed ? 'left-16' : 'left-72'} bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white overflow-y-auto`}>
       {/* Animated Background */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-teal-500/10 animate-pulse"></div>
@@ -293,23 +291,46 @@ const CodebaseExplorer = () => {
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-500/5 to-teal-500/5 rounded-full blur-3xl"></div>
       </div>
 
-      {/* Fixed Sidebar - File Tree */}
-      <div className="fixed top-0 left-0 bottom-0 w-96 bg-slate-800/60 backdrop-blur-xl border-r border-slate-700/50 flex flex-col shadow-2xl">
-        {/* Control Panel */}
-        <div className="flex-shrink-0 p-6 border-b border-slate-700/50 bg-slate-800/80">
-          <div className="flex items-center space-x-4 mb-6">
-            <div className="bg-gradient-to-br from-purple-500 via-blue-500 to-teal-500 p-3 rounded-xl shadow-lg ring-1 ring-white/10">
-              <TreePine className="w-8 h-8 text-white drop-shadow-lg" />
+      {/* Control Panel */}
+      <div className="relative bg-slate-800/60 backdrop-blur-xl border-b border-slate-700/50 shadow-2xl">
+        <div className="px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-gradient-to-br from-purple-500 via-blue-500 to-teal-500 p-4 rounded-2xl shadow-lg ring-1 ring-white/10">
+                <TreePine className="w-10 h-10 text-white drop-shadow-lg" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-teal-400 bg-clip-text text-transparent drop-shadow-sm">
+                  Codebase Explorer
+                </h1>
+                <p className="text-slate-400 text-lg font-medium">Navigate and analyze your code</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-teal-400 bg-clip-text text-transparent drop-shadow-sm">
-                Codebase Explorer
-              </h1>
-              <p className="text-slate-400 text-sm font-medium">Navigate and analyze your code</p>
+            <div className="flex items-center space-x-6 text-sm">
+              <div className="flex items-center space-x-3 bg-slate-700/50 px-4 py-2 rounded-xl backdrop-blur-sm">
+                <FileText className="w-5 h-5 text-blue-400" />
+                <span className="text-slate-200 font-medium">{stats.totalFiles}</span>
+                <span className="text-slate-400">Files</span>
+              </div>
+              <div className="flex items-center space-x-3 bg-slate-700/50 px-4 py-2 rounded-xl backdrop-blur-sm">
+                <Folder className="w-5 h-5 text-amber-400" />
+                <span className="text-slate-200 font-medium">{stats.folders}</span>
+                <span className="text-slate-400">Folders</span>
+              </div>
+              <div className="flex items-center space-x-3 bg-slate-700/50 px-4 py-2 rounded-xl backdrop-blur-sm">
+                <Brain className="w-5 h-5 text-teal-400" />
+                <span className="text-slate-200 font-medium">{stats.analyzedFiles}</span>
+                <span className="text-slate-400">Analyzed</span>
+              </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div className="space-y-4">
+      <div className="relative px-8 py-8">
+        {/* Repository and Search Controls */}
+        <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-8 mb-10 shadow-2xl ring-1 ring-white/5">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div>
               <label className="block text-sm font-semibold text-slate-300 mb-2">Repository</label>
               <div className="relative group">
@@ -335,232 +356,209 @@ const CodebaseExplorer = () => {
               />
             </div>
 
-            <button
-              onClick={handleExplore}
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-purple-600 via-blue-600 to-teal-600 hover:from-purple-700 hover:via-blue-700 hover:to-teal-700 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center space-x-3 shadow-xl ring-1 ring-white/10 hover:shadow-2xl hover:scale-105 disabled:hover:scale-100"
-            >
-              {isLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  <span>Exploring...</span>
-                </>
-              ) : (
-                <>
-                  <Search className="w-5 h-5" />
-                  <span>Explore Repository</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        <div className="flex-shrink-0 p-6 border-b border-slate-700/50 space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search files..."
-              className="w-full bg-slate-700/50 border border-slate-600/50 rounded-xl px-10 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition-all duration-300"
-            />
-          </div>
-
-          <div className="flex space-x-2">
-            {['all', 'analyzed', 'unanalyzed'].map((filter) => (
+            <div>
+              <label className="block text-sm font-semibold text-slate-300 mb-2">Action</label>
               <button
-                key={filter}
-                onClick={() => setFilterType(filter)}
-                className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                  filterType === filter
-                    ? 'bg-teal-600 text-white'
-                    : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
-                }`}
+                onClick={handleExplore}
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-purple-600 via-blue-600 to-teal-600 hover:from-purple-700 hover:via-blue-700 hover:to-teal-700 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center justify-center space-x-3 shadow-xl ring-1 ring-white/10 hover:shadow-2xl hover:scale-105 disabled:hover:scale-100"
               >
-                {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span>Exploring...</span>
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-5 h-5" />
+                    <span>Explore Repository</span>
+                  </>
+                )}
               </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4">
-          {fileTree.length > 0 ? (
-            <div className="space-y-1">
-              {renderFileTree(fileTree)}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="bg-slate-700/30 p-6 rounded-2xl">
-                <TreePine className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-                <p className="text-slate-400">No repository loaded</p>
-                <p className="text-slate-500 text-sm mt-1">Enter a repository above to explore</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Main Content Area - Adjusted to start right of sidebar */}
-      <div className="fixed top-0 right-0 bottom-0 left-96 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-y-auto">
-        <div className="relative bg-slate-800/60 backdrop-blur-xl border-b border-slate-700/50 shadow-2xl">
-          <div className="px-8 py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-3xl font-bold text-white mb-2">Code Analysis</h2>
-                <p className="text-slate-400 text-lg">AI-powered insights for your codebase</p>
-              </div>
-              <div className="flex items-center space-x-6 text-sm">
-                <div className="flex items-center space-x-3 bg-slate-700/50 px-4 py-2 rounded-xl backdrop-blur-sm">
-                  <FileText className="w-5 h-5 text-blue-400" />
-                  <span className="text-slate-200 font-medium">{stats.totalFiles}</span>
-                  <span className="text-slate-400">Files</span>
-                </div>
-                <div className="flex items-center space-x-3 bg-slate-700/50 px-4 py-2 rounded-xl backdrop-blur-sm">
-                  <Folder className="w-5 h-5 text-amber-400" />
-                  <span className="text-slate-200 font-medium">{stats.folders}</span>
-                  <span className="text-slate-400">Folders</span>
-                </div>
-                <div className="flex items-center space-x-3 bg-slate-700/50 px-4 py-2 rounded-xl backdrop-blur-sm">
-                  <Brain className="w-5 h-5 text-teal-400" />
-                  <span className="text-slate-200 font-medium">{stats.analyzedFiles}</span>
-                  <span className="text-slate-400">Analyzed</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
 
-        <div className="relative px-8 py-8">
-          {selectedFile ? (
-            <div className="space-y-8">
-              <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-8 shadow-2xl ring-1 ring-white/5">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="bg-slate-700/50 p-3 rounded-xl">
-                      {getFileIcon(selectedFile)}
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-white mb-1">
-                        {selectedFile.path.split('/').pop()}
-                      </h2>
-                      <p className="text-slate-400 font-mono text-sm">{selectedFile.path}</p>
-                    </div>
+        {/* File Tree and Search */}
+        <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-8 mb-10 shadow-2xl ring-1 ring-white/5">
+          <div className="flex items-center space-x-4 mb-6">
+            <div className="bg-gradient-to-br from-blue-500 via-purple-500 to-teal-500 p-3 rounded-xl shadow-lg ring-1 ring-white/10">
+              <TreePine className="w-6 h-6 text-white" />
+            </div>
+            <h2 className="text-xl font-bold text-white">File Explorer</h2>
+          </div>
+          <div className="flex space-x-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search files..."
+                className="w-full bg-slate-700/50 border border-slate-600/50 rounded-xl px-10 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition-all duration-300"
+              />
+            </div>
+            <div className="flex space-x-2">
+              {['all', 'analyzed', 'unanalyzed'].map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setFilterType(filter)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    filterType === filter
+                      ? 'bg-teal-600 text-white'
+                      : 'bg-slate-700/50 text-slate-300 hover:bg-slate-600/50'
+                  }`}
+                >
+                  {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-1">
+            {fileTree.length > 0 ? (
+              renderFileTree(fileTree)
+            ) : (
+              <div className="text-center py-12">
+                <div className="bg-slate-700/30 p-6 rounded-2xl">
+                  <TreePine className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                  <p className="text-slate-400">No repository loaded</p>
+                  <p className="text-slate-500 text-sm mt-1">Enter a repository above to explore</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* File Analysis */}
+        {selectedFile && (
+          <div className="space-y-8">
+            <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-8 shadow-2xl ring-1 ring-white/5">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-4">
+                  <div className="bg-slate-700/50 p-3 rounded-xl">
+                    {getFileIcon(selectedFile)}
                   </div>
-                  
-                  <div className="flex items-center space-x-4">
-                    {selectedFile.size && (
-                      <span className="bg-slate-700/50 text-slate-300 px-4 py-2 rounded-xl text-sm font-medium">
-                        {(selectedFile.size / 1000).toFixed(1)}KB
-                      </span>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white mb-1">
+                      {selectedFile.path.split('/').pop()}
+                    </h2>
+                    <p className="text-slate-400 font-mono text-sm">{selectedFile.path}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-4">
+                  {selectedFile.size && (
+                    <span className="bg-slate-700/50 text-slate-300 px-4 py-2 rounded-xl text-sm font-medium">
+                      {(selectedFile.size / 1000).toFixed(1)}KB
+                    </span>
+                  )}
+                  <button
+                    onClick={() => analyzeFile(selectedFile.path)}
+                    disabled={analyzing || analysisResults[selectedFile.path]}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center space-x-2 shadow-lg ring-1 ring-white/10 hover:shadow-xl hover:scale-105 disabled:hover:scale-100"
+                  >
+                    {analyzing ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Analyzing...</span>
+                      </>
+                    ) : analysisResults[selectedFile.path] ? (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>Analyzed</span>
+                      </>
+                    ) : (
+                      <>
+                        <Brain className="w-4 h-4" />
+                        <span>Analyze with AI</span>
+                      </>
                     )}
-                    <button
-                      onClick={() => analyzeFile(selectedFile.path)}
-                      disabled={analyzing || analysisResults[selectedFile.path]}
-                      className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center space-x-2 shadow-lg ring-1 ring-white/10 hover:shadow-xl hover:scale-105 disabled:hover:scale-100"
-                    >
-                      {analyzing ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          <span>Analyzing...</span>
-                        </>
-                      ) : analysisResults[selectedFile.path] ? (
-                        <>
-                          <Sparkles className="w-4 h-4" />
-                          <span>Analyzed</span>
-                        </>
-                      ) : (
-                        <>
-                          <Brain className="w-4 h-4" />
-                          <span>Analyze with AI</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
+                  </button>
                 </div>
               </div>
+            </div>
 
-              {analysisResults[selectedFile.path] && (
-                <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-8 shadow-2xl ring-1 ring-white/5">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-3 rounded-xl shadow-lg ring-1 ring-white/10">
-                      <Brain className="w-6 h-6 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-white">AI Analysis Results</h3>
+            {analysisResults[selectedFile.path] && (
+              <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-8 shadow-2xl ring-1 ring-white/5">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-3 rounded-xl shadow-lg ring-1 ring-white/10">
+                    <Brain className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white">AI Analysis Results</h3>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="bg-slate-700/30 rounded-2xl p-6 border border-slate-600/30">
+                    <h4 className="text-lg font-semibold text-white mb-3 flex items-center space-x-2">
+                      <BookOpen className="w-5 h-5 text-cyan-400" />
+                      <span>Description</span>
+                    </h4>
+                    <p className="text-slate-300 leading-relaxed">
+                      {analysisResults[selectedFile.path].description}
+                    </p>
                   </div>
 
-                  <div className="space-y-6">
-                    <div className="bg-slate-700/30 rounded-2xl p-6 border border-slate-600/30">
-                      <h4 className="text-lg font-semibold text-white mb-3 flex items-center space-x-2">
-                        <BookOpen className="w-5 h-5 text-cyan-400" />
-                        <span>Description</span>
-                      </h4>
-                      <p className="text-slate-300 leading-relaxed">
-                        {analysisResults[selectedFile.path].description}
-                      </p>
+                  <div className="bg-slate-700/30 rounded-2xl p-6 border border-slate-600/30">
+                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+                      <Code className="w-5 h-5 text-purple-400" />
+                      <span>Key Functions</span>
+                    </h4>
+                    <div className="flex flex-wrap gap-3">
+                      {analysisResults[selectedFile.path].functions.map((func, index) => (
+                        <span
+                          key={index}
+                          className="bg-purple-400/20 text-purple-300 px-4 py-2 rounded-xl text-sm font-medium border border-purple-400/30"
+                        >
+                          {func}()
+                        </span>
+                      ))}
                     </div>
+                  </div>
 
-                    <div className="bg-slate-700/30 rounded-2xl p-6 border border-slate-600/30">
-                      <h4 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-                        <Code className="w-5 h-5 text-purple-400" />
-                        <span>Key Functions</span>
-                      </h4>
-                      <div className="flex flex-wrap gap-3">
-                        {analysisResults[selectedFile.path].functions.map((func, index) => (
-                          <span
-                            key={index}
-                            className="bg-purple-400/20 text-purple-300 px-4 py-2 rounded-xl text-sm font-medium border border-purple-400/30"
-                          >
-                            {func}()
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                  <div className="bg-slate-700/30 rounded-2xl p-6 border border-slate-600/30">
+                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+                      <Activity className="w-5 h-5 text-amber-400" />
+                      <span>Complexity Level</span>
+                    </h4>
+                    <span className={`px-4 py-2 rounded-xl text-sm font-semibold border ${getComplexityColor(analysisResults[selectedFile.path].complexity)}`}>
+                      {analysisResults[selectedFile.path].complexity.toUpperCase()}
+                    </span>
+                  </div>
 
-                    <div className="bg-slate-700/30 rounded-2xl p-6 border border-slate-600/30">
-                      <h4 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-                        <Activity className="w-5 h-5 text-amber-400" />
-                        <span>Complexity Level</span>
-                      </h4>
-                      <span className={`px-4 py-2 rounded-xl text-sm font-semibold border ${getComplexityColor(analysisResults[selectedFile.path].complexity)}`}>
-                        {analysisResults[selectedFile.path].complexity.toUpperCase()}
-                      </span>
-                    </div>
-
-                    <div className="bg-slate-700/30 rounded-2xl p-6 border border-slate-600/30">
-                      <h4 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
-                        <Zap className="w-5 h-5 text-yellow-400" />
-                        <span>Suggestions</span>
-                      </h4>
-                      <div className="space-y-3">
-                        {analysisResults[selectedFile.path].suggestions.map((suggestion, index) => (
-                          <div key={index} className="flex items-start space-x-3 p-4 bg-slate-800/60 rounded-xl border border-slate-600/30">
-                            <div className="bg-yellow-400/20 p-2 rounded-lg">
-                              <ArrowRight className="w-4 h-4 text-yellow-400" />
-                            </div>
-                            <p className="text-slate-300 leading-relaxed flex-1">{suggestion}</p>
+                  <div className="bg-slate-700/30 rounded-2xl p-6 border border-slate-600/30">
+                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+                      <Zap className="w-5 h-5 text-yellow-400" />
+                      <span>Suggestions</span>
+                    </h4>
+                    <div className="space-y-3">
+                      {analysisResults[selectedFile.path].suggestions.map((suggestion, index) => (
+                        <div key={index} className="flex items-start space-x-3 p-4 bg-slate-800/60 rounded-xl border border-slate-600/30">
+                          <div className="bg-yellow-400/20 p-2 rounded-lg">
+                            <ArrowRight className="w-4 h-4 text-yellow-400" />
                           </div>
-                        ))}
-                      </div>
+                          <p className="text-slate-300 leading-relaxed flex-1">{suggestion}</p>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-          ) : (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center">
-                <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-12 shadow-2xl ring-1 ring-white/5">
-                  <div className="bg-gradient-to-br from-purple-500/20 to-blue-500/20 p-6 rounded-3xl w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-                    <Eye className="w-12 h-12 text-blue-400" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-300 mb-3">Select a File to Explore</h3>
-                  <p className="text-slate-400 text-lg">Choose a file from the tree on the left to view its analysis and details.</p>
+              </div>
+            )}
+          </div>
+        )}
+        {!selectedFile && (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center">
+              <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-12 shadow-2xl ring-1 ring-white/5">
+                <div className="bg-gradient-to-br from-purple-500/20 to-blue-500/20 p-6 rounded-3xl w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+                  <Eye className="w-12 h-12 text-blue-400" />
                 </div>
+                <h3 className="text-2xl font-bold text-slate-300 mb-3">Select a File to Explore</h3>
+                <p className="text-slate-400 text-lg">Choose a file from the tree above to view its analysis and details.</p>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

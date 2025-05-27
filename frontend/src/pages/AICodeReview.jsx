@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Search, GitPullRequest, FileText, Brain, CheckCircle, AlertTriangle, Clock, Eye, Code, Zap, Star, GitBranch, Users, Shield, Activity } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, GitPullRequest, FileText, Brain, CheckCircle, AlertTriangle, Clock, Eye, Code, Zap, Star, GitBranch, Activity } from 'lucide-react';
 
 const AICodeReview = () => {
   const [repo, setRepo] = useState('');
@@ -7,107 +7,64 @@ const AICodeReview = () => {
   const [reviewMode, setReviewMode] = useState('recent'); // 'recent', 'specific', 'all'
   const [isLoading, setIsLoading] = useState(false);
   const [reviews, setReviews] = useState([]);
-  const [currentReview, setCurrentReview] = useState(null);
+  const [error, setError] = useState('');
   const [stats, setStats] = useState({ totalPRs: 0, filesReviewed: 0, issuesFound: 0 });
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  // Mock data for demonstration
-  const mockReviews = [
-    {
-      id: 1,
-      prNumber: 142,
-      title: "Add authentication middleware",
-      files: [
-        {
-          filename: "src/middleware/auth.js",
-          changes: 23,
-          suggestions: [
-            { type: "security", text: "Consider adding rate limiting to prevent brute force attacks" },
-            { type: "performance", text: "Cache JWT verification results for better performance" },
-            { type: "bug", text: "Missing null check for user object in line 45" }
-          ],
-          quality: "good"
-        },
-        {
-          filename: "src/routes/protected.js", 
-          changes: 12,
-          suggestions: [
-            { type: "improvement", text: "Add input validation for request parameters" }
-          ],
-          quality: "excellent"
-        }
-      ],
-      status: "completed",
-      timestamp: new Date().toISOString()
-    },
-    {
-      id: 2,
-      prNumber: 141,
-      title: "Fix database connection pooling",
-      files: [
-        {
-          filename: "src/database/pool.js",
-          changes: 35,
-          suggestions: [
-            { type: "critical", text: "Memory leak detected in connection cleanup" },
-            { type: "performance", text: "Optimize pool size based on concurrent connections" }
-          ],
-          quality: "needs-work"
-        }
-      ],
-      status: "completed",
-      timestamp: new Date(Date.now() - 3600000).toISOString()
-    }
-  ];
-
-  useEffect(() => {
-    setReviews(mockReviews);
-    setStats({
-      totalPRs: mockReviews.length,
-      filesReviewed: mockReviews.reduce((acc, review) => acc + review.files.length, 0),
-      issuesFound: mockReviews.reduce((acc, review) => 
-        acc + review.files.reduce((fileAcc, file) => fileAcc + file.suggestions.length, 0), 0)
-    });
-  }, []);
 
   const handleReview = async () => {
     if (!repo.trim() || !repo.includes('/')) {
-      alert('Please enter a valid repository in format: owner/repo');
+      setError('Please enter a valid repository in format: owner/repo');
+      return;
+    }
+    if (reviewMode === 'specific' && (!prNumber || isNaN(prNumber))) {
+      setError('Please enter a valid PR number');
       return;
     }
 
+    setError('');
     setIsLoading(true);
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      if (reviewMode === 'specific' && prNumber) {
-        const newReview = {
-          id: Date.now(),
-          prNumber: parseInt(prNumber),
-          title: `PR #${prNumber} Review`,
-          files: [{
-            filename: "example.js",
-            changes: Math.floor(Math.random() * 50) + 1,
-            suggestions: [
-              { type: "improvement", text: "Consider using async/await instead of callbacks" },
-              { type: "security", text: "Validate input parameters to prevent injection" }
-            ],
-            quality: "good"
-          }],
-          status: "completed",
-          timestamp: new Date().toISOString()
-        };
-        setReviews(prev => [newReview, ...prev]);
-        setCurrentReview(newReview);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/execute/1', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          repo: repo.trim(),
+          reviewMode,
+          prNumber: reviewMode === 'specific' ? parseInt(prNumber) : undefined
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch PR review');
       }
+
+      const data = await response.json();
+      const result = data.result;
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      const newReviews = Array.isArray(result) ? result : [result];
+      setReviews(prev => [...newReviews, ...prev]);
+      setStats({
+        totalPRs: newReviews.length,
+        filesReviewed: newReviews.reduce((acc, review) => acc + review.files.length, 0),
+        issuesFound: newReviews.reduce((acc, review) =>
+          acc + review.files.reduce((fileAcc, file) => fileAcc + file.suggestions.length, 0), 0)
+      });
+    } catch (err) {
+      setError(err.message || 'Failed to fetch PR review');
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   const getSuggestionIcon = (type) => {
     switch (type) {
       case 'critical': return <AlertTriangle className="w-4 h-4 text-red-400" />;
-      case 'security': return <Shield className="w-4 h-4 text-amber-400" />;
+      case 'security': return <AlertTriangle className="w-4 h-4 text-amber-400" />;
       case 'bug': return <AlertTriangle className="w-4 h-4 text-red-400" />;
       case 'performance': return <Zap className="w-4 h-4 text-yellow-400" />;
       case 'improvement': return <Star className="w-4 h-4 text-cyan-400" />;
@@ -172,6 +129,14 @@ const AICodeReview = () => {
       </div>
 
       <div className="relative px-8 py-8">
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6 flex items-center space-x-2 text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl p-4 animate-pulse">
+            <AlertTriangle className="w-5 h-5" />
+            <span className="text-sm">{error}</span>
+          </div>
+        )}
+
         {/* Control Panel */}
         <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-8 mb-10 shadow-2xl ring-1 ring-white/5">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -188,6 +153,7 @@ const AICodeReview = () => {
                   onChange={(e) => setRepo(e.target.value)}
                   placeholder="owner/repository"
                   className="w-full bg-slate-700/50 border border-slate-600/50 rounded-2xl px-12 py-4 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition-all duration-300 backdrop-blur-sm"
+                  onKeyPress={(e) => e.key === 'Enter' && handleReview()}
                 />
               </div>
             </div>
@@ -208,7 +174,7 @@ const AICodeReview = () => {
               </select>
             </div>
 
-            {/* PR Number (conditional) */}
+            {/* PR Number or Action */}
             <div>
               <label className="block text-sm font-semibold text-slate-300 mb-3">
                 {reviewMode === 'specific' ? 'PR Number' : 'Action'}
@@ -220,11 +186,12 @@ const AICodeReview = () => {
                   onChange={(e) => setPrNumber(e.target.value)}
                   placeholder="Enter PR number"
                   className="w-full bg-slate-700/50 border border-slate-600/50 rounded-2xl px-5 py-4 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 transition-all duration-300 backdrop-blur-sm"
+                  onKeyPress={(e) => e.key === 'Enter' && handleReview()}
                 />
               ) : (
                 <button
                   onClick={handleReview}
-                  disabled={isLoading}
+                  disabled={isLoading || !repo}
                   className="w-full bg-gradient-to-r from-blue-600 via-teal-600 to-cyan-600 hover:from-blue-700 hover:via-teal-700 hover:to-cyan-700 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300 flex items-center justify-center space-x-3 shadow-xl ring-1 ring-white/10 hover:shadow-2xl hover:scale-105 disabled:hover:scale-100"
                 >
                   {isLoading ? (
@@ -247,7 +214,7 @@ const AICodeReview = () => {
             <div className="mt-6">
               <button
                 onClick={handleReview}
-                disabled={isLoading}
+                disabled={isLoading || !repo || !prNumber}
                 className="w-full bg-gradient-to-r from-blue-600 via-teal-600 to-cyan-600 hover:from-blue-700 hover:via-teal-700 hover:to-cyan-700 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold py-4 px-8 rounded-2xl transition-all duration-300 flex items-center justify-center space-x-3 shadow-xl ring-1 ring-white/10 hover:shadow-2xl hover:scale-105 disabled:hover:scale-100"
               >
                 {isLoading ? (
@@ -270,7 +237,6 @@ const AICodeReview = () => {
         <div className="space-y-8">
           {reviews.map((review) => (
             <div key={review.id} className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 overflow-hidden shadow-2xl ring-1 ring-white/5 hover:ring-white/10 transition-all duration-300">
-              {/* Review Header */}
               <div className="p-8 border-b border-slate-700/50 bg-gradient-to-r from-slate-800/50 to-slate-700/30">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-5">
@@ -300,8 +266,6 @@ const AICodeReview = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Files */}
               <div className="p-8 space-y-6">
                 {review.files.map((file, fileIndex) => (
                   <div key={fileIndex} className="bg-slate-700/30 rounded-2xl p-6 border border-slate-600/30 shadow-lg backdrop-blur-sm">
@@ -319,8 +283,6 @@ const AICodeReview = () => {
                         {file.quality}
                       </span>
                     </div>
-
-                    {/* Suggestions */}
                     <div className="space-y-4">
                       {file.suggestions.map((suggestion, suggestionIndex) => (
                         <div key={suggestionIndex} className="flex items-start space-x-4 p-4 bg-slate-800/60 rounded-xl border border-slate-600/30 backdrop-blur-sm">
@@ -351,7 +313,6 @@ const AICodeReview = () => {
               </div>
             </div>
           ))}
-
           {reviews.length === 0 && !isLoading && (
             <div className="text-center py-16">
               <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-12 shadow-2xl ring-1 ring-white/5">

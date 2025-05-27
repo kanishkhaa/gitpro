@@ -1,21 +1,42 @@
 from utils import fetch_pr_files, get_recent_pr, call_groq_api, github_api_get
 
 def review_pr_by_number(repo: str, pr_number: int):
-    print(f"\n=== Reviewing PR #{pr_number} ===")
+    result = {
+        "prNumber": pr_number,
+        "title": f"Review of PR #{pr_number}",
+        "timestamp": "",
+        "status": "completed",
+        "files": []
+    }
+
     files = fetch_pr_files(repo, pr_number)
     if not files:
-        print("❌ No files found or error fetching PR files.")
-        return
+        return {
+            "prNumber": pr_number,
+            "title": f"Review of PR #{pr_number}",
+            "timestamp": "",
+            "status": "failed",
+            "files": [],
+            "error": "No files found or error fetching PR files."
+        }
 
-    print(f"✅ Found {len(files)} files to review.\n")
-    for i, f in enumerate(files[:5], 1):
+    for f in files[:5]:  # Limit to first 5 files
         filename = f.get("filename", "unknown")
         patch = f.get("patch", "")
-        if not patch:
-            print(f"  {i}. {filename} - ⚠️ No changes to review")
-            continue
+        file_review = {
+            "filename": filename,
+            "changes": 0,
+            "quality": "needs-work",
+            "suggestions": []
+        }
 
-        print(f"  {i}. Reviewing {filename}...")
+        if not patch:
+            file_review["suggestions"].append({
+                "type": "warning",
+                "text": "No changes to review"
+            })
+            result["files"].append(file_review)
+            continue
 
         lines = patch.splitlines()
         changes = [
@@ -27,8 +48,14 @@ def review_pr_by_number(repo: str, pr_number: int):
             if line.startswith("-") and not line.startswith("---")
         ])
 
+        file_review["changes"] = len(changes)
+
         if not changes:
-            print(f"     ⚠️ No significant code changes detected.")
+            file_review["suggestions"].append({
+                "type": "warning",
+                "text": "No significant code changes detected."
+            })
+            result["files"].append(file_review)
             continue
 
         change_summary = "\n".join(changes[:20])  # Limit to first 20 changes
@@ -44,38 +71,65 @@ Provide:
 Keep your response concise and actionable."""
 
         suggestions = call_groq_api(prompt)
-        print(f"\n📄 File: {filename}")
-        print(f"🔄 Changes Analyzed: {len(changes)}")
-        print(f"🧠 Review Suggestions:\n{suggestions}")
-        print("-" * 60)
+        # Parse suggestions into structured format
+        suggestion_lines = suggestions.split("\n")
+        current_section = ""
+        for line in suggestion_lines:
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith("**Code Quality Assessment:**"):
+                current_section = "quality"
+                file_review["quality"] = line.replace("**Code Quality Assessment:**", "").strip().lower() or "needs-work"
+            elif line.startswith("**Potential Bugs or Issues:**"):
+                current_section = "bugs"
+            elif line.startswith("**Suggestions for Improvement:**"):
+                current_section = "improvements"
+            elif line.startswith("**Security Considerations:**"):
+                current_section = "security"
+            elif line.startswith("-") or line.startswith("1."):
+                suggestion_type = {
+                    "bugs": "bug",
+                    "improvements": "improvement",
+                    "security": "security"
+                }.get(current_section, "info")
+                file_review["suggestions"].append({
+                    "type": suggestion_type,
+                    "text": line.lstrip("-1234567890. ").strip()
+                })
+
+        result["files"].append(file_review)
+
+    return result
 
 def review_all_prs(repo: str):
-    print("🔄 Fetching all pull requests...")
     prs = github_api_get(f"/repos/{repo}/pulls", params={"state": "all", "per_page": 10})
     if not prs:
-        print("❌ No PRs found in this repository.")
-        return
+        return [{
+            "prNumber": 0,
+            "title": "No PRs found",
+            "timestamp": "",
+            "status": "failed",
+            "files": [],
+            "error": "No PRs found in this repository."
+        }]
 
-    print(f"✅ Found {len(prs)} pull requests.\n")
+    results = []
     for pr in prs:
         pr_number = pr.get("number")
         if pr_number:
-            review_pr_by_number(repo, pr_number)
+            review_result = review_pr_by_number(repo, pr_number)
+            review_result["timestamp"] = pr.get("updated_at", "")
+            results.append(review_result)
+
+    return results
 
 def review_pr(repo: str):
     pr_number = get_recent_pr(repo)
     if pr_number:
-        review_pr_by_number(repo, pr_number)
+        result = review_pr_by_number(repo, pr_number)
+        pr_data = github_api_get(f"/repos/{repo}/pulls/{pr_number}")
+        result["timestamp"] = pr_data.get("updated_at", "") if pr_data else ""
+        return result
     else:
-        print("⚠️ No recent PRs found. Attempting to review all available PRs...")
-        review_all_prs(repo)
-
-if __name__ == "__main__":
-    try:
-        repo = input("🔗 Enter GitHub repo (owner/repo): ").strip()
-        if not repo or "/" not in repo:
-            print("❌ Invalid repository format. Use 'owner/repo'.")
-        else:
-            review_pr(repo)
-    except KeyboardInterrupt:
-        print("\n⛔ Aborted by user.")
+        return review_all_prs(repo)

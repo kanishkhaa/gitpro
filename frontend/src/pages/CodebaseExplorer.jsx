@@ -1,25 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { 
-  Search, 
-  FileText, 
-  FolderOpen, 
-  Folder, 
-  Code, 
-  Eye, 
-  Brain, 
-  GitBranch, 
-  Star, 
-  Zap, 
-  Clock, 
-  Activity, 
-  ChevronRight, 
-  ChevronDown, 
-  File,
-  TreePine,
-  BookOpen,
-  Filter,
-  Sparkles,
-  ArrowRight
+  Search, FileText, FolderOpen, Folder, Code, Eye, Brain, GitBranch, Zap, Activity, 
+  ChevronRight, ChevronDown, File, TreePine, BookOpen, Filter, Sparkles, ArrowRight 
 } from 'lucide-react';
 
 const CodebaseExplorer = ({ isSidebarCollapsed }) => {
@@ -33,84 +15,8 @@ const CodebaseExplorer = ({ isSidebarCollapsed }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [stats, setStats] = useState({ totalFiles: 0, analyzedFiles: 0, folders: 0 });
-  const [analyzing, setAnalyzing] = useState(false);
-  const analysisQueueRef = useRef([]);
-
-  // Mock file structure for demonstration
-  const mockFileTree = [
-    {
-      path: 'src',
-      type: 'folder',
-      children: [
-        {
-          path: 'src/components',
-          type: 'folder',
-          children: [
-            { path: 'src/components/Header.jsx', type: 'file', language: 'javascript', size: 2340 },
-            { path: 'src/components/Sidebar.jsx', type: 'file', language: 'javascript', size: 1820 },
-            { path: 'src/components/Button.jsx', type: 'file', language: 'javascript', size: 950 }
-          ]
-        },
-        {
-          path: 'src/pages',
-          type: 'folder',
-          children: [
-            { path: 'src/pages/Home.jsx', type: 'file', language: 'javascript', size: 3200 },
-            { path: 'src/pages/Dashboard.jsx', type: 'file', language: 'javascript', size: 4500 }
-          ]
-        },
-        {
-          path: 'src/utils',
-          type: 'folder',
-          children: [
-            { path: 'src/utils/api.js', type: 'file', language: 'javascript', size: 1200 },
-            { path: 'src/utils/helpers.js', type: 'file', language: 'javascript', size: 800 }
-          ]
-        },
-        { path: 'src/App.jsx', type: 'file', language: 'javascript', size: 2100 },
-        { path: 'src/index.js', type: 'file', language: 'javascript', size: 450 }
-      ]
-    },
-    {
-      path: 'public',
-      type: 'folder',
-      children: [
-        { path: 'public/index.html', type: 'file', language: 'html', size: 680 },
-        { path: 'public/manifest.json', type: 'file', language: 'json', size: 320 }
-      ]
-    },
-    { path: 'package.json', type: 'file', language: 'json', size: 1100 },
-    { path: 'README.md', type: 'file', language: 'markdown', size: 2800 },
-    { path: '.gitignore', type: 'file', language: 'text', size: 180 }
-  ];
-
-  // Mock analysis results
-  const mockAnalysisResults = {
-    'src/components/Header.jsx': {
-      description: 'Main navigation header component with responsive design and user authentication state management.',
-      functions: ['toggleMobileMenu', 'handleUserDropdown', 'logout'],
-      complexity: 'medium',
-      suggestions: ['Consider extracting user menu logic into separate hook', 'Add accessibility labels for mobile menu']
-    },
-    'src/pages/Dashboard.jsx': {
-      description: 'Dashboard page component that displays user analytics, charts, and recent activity with real-time data updates.',
-      functions: ['fetchDashboardData', 'updateCharts', 'handleRefresh'],
-      complexity: 'high',
-      suggestions: ['Implement data caching to reduce API calls', 'Add loading states for better UX', 'Consider code splitting for charts']
-    },
-    'src/utils/api.js': {
-      description: 'API utility functions for making HTTP requests with authentication and error handling.',
-      functions: ['makeRequest', 'handleAuth', 'processResponse'],
-      complexity: 'low',
-      suggestions: ['Add request interceptors for better error handling', 'Implement retry logic for failed requests']
-    }
-  };
-
-  useEffect(() => {
-    setFileTree(mockFileTree);
-    setAnalysisResults(mockAnalysisResults);
-    calculateStats(mockFileTree);
-  }, []);
+  const [error, setError] = useState('');
+  const API_BASE_URL = 'http://localhost:5000';
 
   const calculateStats = (tree) => {
     let totalFiles = 0;
@@ -131,61 +37,89 @@ const CodebaseExplorer = ({ isSidebarCollapsed }) => {
     setStats({ 
       totalFiles, 
       folders, 
-      analyzedFiles: Object.keys(mockAnalysisResults).length 
+      analyzedFiles: Object.keys(analysisResults).length 
     });
   };
 
   const handleExplore = async () => {
     if (!repo.trim() || !repo.includes('/')) {
-      alert('Please enter a valid repository in format: owner/repo');
+      setError('Please enter a valid repository in format: owner/repo');
       return;
     }
 
     setIsLoading(true);
-    
-    setTimeout(() => {
-      setFileTree(mockFileTree);
-      setAnalysisResults(mockAnalysisResults);
-      calculateStats(mockFileTree);
-      setIsLoading(false);
-    }, 2000);
-  };
+    setError('');
+    setFileTree([]);
+    setAnalysisResults({});
+    setSelectedFile(null);
 
-  const toggleFolder = (path) => {
-    const newExpanded = new Set(expandedFolders);
-    if (newExpanded.has(path)) {
-      newExpanded.delete(path);
-    } else {
-      newExpanded.add(path);
-    }
-    setExpandedFolders(newExpanded);
-  };
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/execute/7`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repo: repo.trim(), branch: branch.trim() })
+      });
 
-  const analyzeFile = async (filePath) => {
-    setAnalyzing(true);
-    
-    setTimeout(() => {
-      if (!analysisResults[filePath]) {
-        const newAnalysis = {
-          description: `AI-generated analysis for ${filePath}. This file contains important functionality for the application.`,
-          functions: ['exampleFunction', 'helperMethod'],
-          complexity: 'medium',
-          suggestions: ['Consider adding more comments', 'Review for optimization opportunities']
-        };
-        
-        setAnalysisResults(prev => ({
-          ...prev,
-          [filePath]: newAnalysis
-        }));
-        
-        setStats(prev => ({
-          ...prev,
-          analyzedFiles: prev.analyzedFiles + 1
-        }));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch repository data');
       }
-      setAnalyzing(false);
-    }, 1500);
+
+      const data = await response.json();
+      console.log('Backend response:', data);
+
+      if (data.result && Array.isArray(data.result.files)) {
+        setFileTree(data.result.files);
+        setAnalysisResults(data.result.analyses || {});
+        calculateStats(data.result.files);
+      } else if (data.result && data.result.error) {
+        throw new Error(data.result.error);
+      } else {
+        throw new Error('Unexpected response format');
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      setError(err.message || 'Failed to analyze repository');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+ const analyzeFile = async (filePath) => {
+    if (analysisResults[filePath]) return;
+
+    setIsLoading(true);
+    try {
+        const content = await fetch(`${API_BASE_URL}/api/file-content`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ repo, branch, path: filePath })
+        }).then(res => res.json());
+
+        if (content.error) throw new Error(content.error);
+
+        const analysis = await fetch(`${API_BASE_URL}/api/analyze-file`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ repo, file_path: filePath, content: content.content })
+        }).then(res => res.json());
+
+        if (analysis.error) throw new Error(analysis.error);
+
+        setAnalysisResults(prev => ({
+            ...prev,
+            [filePath]: analysis.result
+        }));
+        setStats(prev => ({
+            ...prev,
+            analyzedFiles: prev.analyzedFiles + 1
+        }));
+    } catch (err) {
+        setError(`Failed to analyze ${filePath}: ${err.message}`);
+    } finally {
+        setIsLoading(false);
+    }
+};
 
   const getFileIcon = (file) => {
     if (file.type === 'folder') {
@@ -208,6 +142,16 @@ const CodebaseExplorer = ({ isSidebarCollapsed }) => {
     }
   };
 
+  const toggleFolder = (path) => {
+    const newExpanded = new Set(expandedFolders);
+    if (newExpanded.has(path)) {
+      newExpanded.delete(path);
+    } else {
+      newExpanded.add(path);
+    }
+    setExpandedFolders(newExpanded);
+  };
+
   const renderFileTree = (nodes, depth = 0) => {
     return nodes
       .filter(node => {
@@ -220,7 +164,7 @@ const CodebaseExplorer = ({ isSidebarCollapsed }) => {
         if (filterType === 'unanalyzed') return !analysisResults[node.path] && node.type === 'file';
         return true;
       })
-      .map((node, index) => (
+      .map(node => (
         <div key={node.path}>
           <div
             className={`flex items-center space-x-3 p-3 rounded-xl cursor-pointer transition-all duration-200 hover:bg-slate-700/50 ${
@@ -284,14 +228,12 @@ const CodebaseExplorer = ({ isSidebarCollapsed }) => {
 
   return (
     <div className={`fixed top-0 right-0 bottom-0 transition-all duration-300 ${isSidebarCollapsed ? 'left-16' : 'left-72'} bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white overflow-y-auto`}>
-      {/* Animated Background */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-teal-500/10 animate-pulse"></div>
         <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-purple-500/5 to-blue-500/5 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-500/5 to-teal-500/5 rounded-full blur-3xl"></div>
       </div>
 
-      {/* Control Panel */}
       <div className="relative bg-slate-800/60 backdrop-blur-xl border-b border-slate-700/50 shadow-2xl">
         <div className="px-8 py-6">
           <div className="flex items-center justify-between">
@@ -328,7 +270,6 @@ const CodebaseExplorer = ({ isSidebarCollapsed }) => {
       </div>
 
       <div className="relative px-8 py-8">
-        {/* Repository and Search Controls */}
         <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-8 mb-10 shadow-2xl ring-1 ring-white/5">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div>
@@ -377,9 +318,13 @@ const CodebaseExplorer = ({ isSidebarCollapsed }) => {
               </button>
             </div>
           </div>
+          {error && (
+            <div className="mt-4 bg-red-500/20 border border-red-500/50 rounded-xl p-4 text-red-300">
+              {error}
+            </div>
+          )}
         </div>
 
-        {/* File Tree and Search */}
         <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-8 mb-10 shadow-2xl ring-1 ring-white/5">
           <div className="flex items-center space-x-4 mb-6">
             <div className="bg-gradient-to-br from-blue-500 via-purple-500 to-teal-500 p-3 rounded-xl shadow-lg ring-1 ring-white/10">
@@ -429,7 +374,6 @@ const CodebaseExplorer = ({ isSidebarCollapsed }) => {
           </div>
         </div>
 
-        {/* File Analysis */}
         {selectedFile && (
           <div className="space-y-8">
             <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-8 shadow-2xl ring-1 ring-white/5">
@@ -445,7 +389,6 @@ const CodebaseExplorer = ({ isSidebarCollapsed }) => {
                     <p className="text-slate-400 font-mono text-sm">{selectedFile.path}</p>
                   </div>
                 </div>
-                
                 <div className="flex items-center space-x-4">
                   {selectedFile.size && (
                     <span className="bg-slate-700/50 text-slate-300 px-4 py-2 rounded-xl text-sm font-medium">
@@ -454,10 +397,10 @@ const CodebaseExplorer = ({ isSidebarCollapsed }) => {
                   )}
                   <button
                     onClick={() => analyzeFile(selectedFile.path)}
-                    disabled={analyzing || analysisResults[selectedFile.path]}
+                    disabled={isLoading || analysisResults[selectedFile.path]}
                     className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center space-x-2 shadow-lg ring-1 ring-white/10 hover:shadow-xl hover:scale-105 disabled:hover:scale-100"
                   >
-                    {analyzing ? (
+                    {isLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                         <span>Analyzing...</span>
@@ -509,7 +452,7 @@ const CodebaseExplorer = ({ isSidebarCollapsed }) => {
                           key={index}
                           className="bg-purple-400/20 text-purple-300 px-4 py-2 rounded-xl text-sm font-medium border border-purple-400/30"
                         >
-                          {func}()
+                          {func.replace(/[()]/g, '')}
                         </span>
                       ))}
                     </div>

@@ -1,196 +1,60 @@
-import React, { useState, useEffect } from 'react';
-import { Search, FileText, Code, Brain, CheckCircle, AlertTriangle, Clock, Eye, Zap, Star, GitBranch, Users, Shield, Activity, BookOpen, Download, Copy } from 'lucide-react';
+import React, { useState } from 'react';
+import { FileText, Code, BookOpen, Clock, Copy, Activity, Download, ChevronDown, ChevronUp } from 'lucide-react';
 
 const AutoDocstrings = () => {
   const [repo, setRepo] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [generatedDocs, setGeneratedDocs] = useState([]);
   const [stats, setStats] = useState({ totalFiles: 0, docsGenerated: 0, linesDocumented: 0 });
-  const [selectedFile, setSelectedFile] = useState(null);
-
-  // Mock data for demonstration
-  const mockDocs = [
-    {
-      id: 1,
-      filename: "src/utils/api.py",
-      path: "src/utils/api.py",
-      language: "python",
-      functions: [
-        {
-          name: "get_changed_files",
-          params: ["repo: str"],
-          description: "Fetches recently changed files from a GitHub repository using the GitHub API.",
-          example: "files = get_changed_files('owner/repo')"
-        },
-        {
-          name: "call_groq_api", 
-          params: ["prompt: str"],
-          description: "Makes API calls to Groq's AI service for generating documentation content.",
-          example: "response = call_groq_api('Generate docs for this code...')"
-        }
-      ],
-      documentation: `# API Utilities Module
-
-## Overview
-This module provides essential utilities for interacting with external APIs, specifically GitHub and Groq AI services. It handles repository analysis and AI-powered documentation generation.
-
-## Functions
-
-### get_changed_files(repo: str) -> List[str]
-Retrieves a list of recently modified files from a GitHub repository.
-
-**Parameters:**
-- \`repo\`: Repository identifier in format 'owner/repo'
-
-**Returns:**
-- List of file paths that have been recently changed
-
-**Example:**
-\`\`\`python
-files = get_changed_files('microsoft/vscode')
-print(f"Found {len(files)} changed files")
-\`\`\`
-
-### call_groq_api(prompt: str) -> str
-Sends a prompt to Groq AI service and returns the generated response.
-
-**Parameters:**
-- \`prompt\`: The input prompt for AI processing
-
-**Returns:**
-- Generated text response from the AI model
-
-**Example:**
-\`\`\`python
-doc = call_groq_api("Generate documentation for this function...")
-print(doc)
-\`\`\`
-
-## Dependencies
-- \`requests\`: For HTTP API calls
-- \`groq\`: Groq AI SDK
-
-## Usage Notes
-- Ensure API keys are properly configured
-- Handle rate limiting for GitHub API
-- Consider caching responses for frequently accessed repositories`,
-      timestamp: new Date().toISOString(),
-      status: "completed",
-      linesCount: 156
-    },
-    {
-      id: 2,
-      filename: "src/core/processor.py",
-      path: "src/core/processor.py", 
-      language: "python",
-      functions: [
-        {
-          name: "process_code_file",
-          params: ["file_path: str", "content: str"],
-          description: "Processes a source code file and extracts structural information for documentation.",
-          example: "result = process_code_file('app.py', file_content)"
-        }
-      ],
-      documentation: `# Code Processor Module
-
-## Overview
-Core processing engine for analyzing source code files and extracting documentation-relevant information.
-
-## Functions
-
-### process_code_file(file_path: str, content: str) -> Dict
-Analyzes source code content and extracts functions, classes, and documentation metadata.
-
-**Parameters:**
-- \`file_path\`: Path to the source file
-- \`content\`: Raw source code content
-
-**Returns:**
-- Dictionary containing extracted code structure information
-
-**Example:**
-\`\`\`python
-with open('example.py', 'r') as f:
-    content = f.read()
-result = process_code_file('example.py', content)
-\`\`\`
-
-## Features
-- Multi-language support
-- Function signature extraction
-- Class hierarchy analysis
-- Import dependency tracking`,
-      timestamp: new Date(Date.now() - 1800000).toISOString(),
-      status: "completed",
-      linesCount: 89
-    }
-  ];
-
-  useEffect(() => {
-    setGeneratedDocs(mockDocs);
-    setStats({
-      totalFiles: mockDocs.length,
-      docsGenerated: mockDocs.length,
-      linesDocumented: mockDocs.reduce((acc, doc) => acc + doc.linesCount, 0)
-    });
-  }, []);
+  const [error, setError] = useState('');
+  const [expandedSections, setExpandedSections] = useState({});
+  const API_BASE_URL = 'http://localhost:5000';
 
   const handleGenerateDocs = async () => {
     if (!repo.trim() || !repo.includes('/')) {
-      alert('Please enter a valid repository in format: owner/repo');
+      setError('Please enter a valid repository in format: owner/repo');
       return;
     }
 
     setIsLoading(true);
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      const newDoc = {
-        id: Date.now(),
-        filename: "example.js",
-        path: "src/components/example.js",
-        language: "javascript",
-        functions: [
-          {
-            name: "handleSubmit",
-            params: ["event: Event"],
-            description: "Handles form submission with validation and API calls.",
-            example: "handleSubmit(formEvent)"
-          }
-        ],
-        documentation: `# Example Component
+    setError('');
 
-## Overview
-A React component demonstrating form handling and user interaction patterns.
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/execute/4`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repo: repo.trim() })
+      });
 
-## Functions
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate documentation');
+      }
 
-### handleSubmit(event: Event)
-Processes form submission with comprehensive validation.
-
-**Parameters:**
-- \`event\`: Form submission event object
-
-**Example:**
-\`\`\`javascript
-const handleSubmit = (event) => {
-  event.preventDefault();
-  // Process form data
-};
-\`\`\``,
-        timestamp: new Date().toISOString(),
-        status: "completed",
-        linesCount: 45
-      };
-      
-      setGeneratedDocs(prev => [newDoc, ...prev]);
-      setStats(prev => ({
-        totalFiles: prev.totalFiles + 1,
-        docsGenerated: prev.docsGenerated + 1,
-        linesDocumented: prev.linesDocumented + newDoc.linesCount
-      }));
+      const data = await response.json();
+      if (data.result && data.result.docs) {
+        const newDocs = data.result.docs.map(doc => ({
+          id: Date.now() + Math.random(),
+          ...doc,
+          timestamp: new Date().toISOString(),
+          status: doc.status || 'completed'
+        }));
+        setGeneratedDocs(prev => [...newDocs, ...prev]);
+        setStats({
+          totalFiles: newDocs.length,
+          docsGenerated: newDocs.filter(doc => doc.status === 'completed').length,
+          linesDocumented: newDocs.reduce((acc, doc) => acc + doc.linesCount, 0)
+        });
+      } else if (data.result && data.result.error) {
+        throw new Error(data.result.error);
+      } else {
+        throw new Error('Unexpected response format');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to generate documentation');
+    } finally {
       setIsLoading(false);
-    }, 3000);
+    }
   };
 
   const getLanguageColor = (language) => {
@@ -198,27 +62,159 @@ const handleSubmit = (event) => {
       case 'python': return 'text-blue-400 bg-blue-400/10 border-blue-400/20';
       case 'javascript': return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20';
       case 'typescript': return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
-      case 'java': return 'text-red-400 bg-red-400/10 border-red-400/20';
-      case 'go': return 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20';
+      case 'image': return 'text-purple-400 bg-purple-400/10 border-purple-400/20';
       default: return 'text-slate-400 bg-slate-400/10 border-slate-400/20';
     }
   };
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    // Could add a toast notification here
+  };
+
+  const downloadDocsAsPDF = () => {
+    const latexContent = generateLatexContent(generatedDocs, repo);
+    const blob = new Blob([latexContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${repo.replace('/', '_')}_documentation.tex`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const generateLatexContent = (docs, repo) => {
+    return `
+\\documentclass{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage{geometry}
+\\geometry{a4paper, margin=1in}
+\\usepackage{listings}
+\\usepackage{xcolor}
+\\usepackage{titling}
+\\usepackage{fontspec}
+\\setmainfont{DejaVu Sans}
+
+\\lstset{
+  basicstyle=\\ttfamily\\small,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\\color{gray!10},
+  keywordstyle=\\color{blue},
+  commentstyle=\\color{gray},
+  stringstyle=\\color{purple}
+}
+
+\\title{Documentation for ${repo}}
+\\author{Auto-generated by Grok}
+\\date{${new Date().toLocaleDateString()}}
+
+\\begin{document}
+
+\\maketitle
+\\tableofcontents
+\\newpage
+
+${docs.map(doc => `
+\\section{${doc.filename}}
+\\label{sec:${doc.path.replace(/[\/.]/g, '_')}}
+
+\\subsection{Purpose}
+${doc.documentation.split('## Purpose')[1]?.split('## ')[0]?.trim() || 'No purpose provided'}
+
+\\subsection{Main Components}
+${doc.functions.length ? doc.functions.map(func => `
+\\subsubsection{${func.name}}
+Description: ${func.description}
+${func.example ? `
+\\paragraph{Example}
+\\begin{lstlisting}
+${func.example}
+\\end{lstlisting}
+` : ''}
+`).join('\n') : 'None'}
+
+\\subsection{Usage Examples}
+${doc.documentation.split('## Usage Examples')[1]?.split('## ')[0]?.trim() || 'No usage examples provided'}
+
+\\subsection{Dependencies}
+${doc.documentation.split('## Dependencies')[1]?.split('## ')[0]?.trim() || 'None'}
+
+\\subsection{Developer Notes}
+${doc.documentation.split('## Developer Notes')[1]?.split('## ')[0]?.trim() || 'None'}
+
+`).join('\n')}
+
+\\end{document}
+`;
+  };
+
+  const toggleSection = (docId, section) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [`${docId}-${section}`]: !prev[`${docId}-${section}`]
+    }));
+  };
+
+  const renderDocumentation = (doc) => {
+    const sections = [
+      { title: 'Purpose', content: doc.documentation.split('## Purpose')[1]?.split('## ')[0]?.trim() || 'No purpose provided' },
+      { title: 'Usage Examples', content: doc.documentation.split('## Usage Examples')[1]?.split('## ')[0]?.trim() || 'No usage examples provided' },
+      { title: 'Dependencies', content: doc.documentation.split('## Dependencies')[1]?.split('## ')[0]?.trim() || 'None' },
+      { title: 'Developer Notes', content: doc.documentation.split('## Developer Notes')[1]?.split('## ')[0]?.trim() || 'None' }
+    ];
+
+    return sections.map((section, index) => {
+      const isExpanded = expandedSections[`${doc.id}-${section.title}`];
+      const isCodeSection = section.title === 'Usage Examples' && section.content.includes('```');
+      let formattedContent = section.content;
+
+      // Extract code blocks for syntax highlighting
+      if (isCodeSection) {
+        const codeMatch = section.content.match(/```(\w+)?\n([\s\S]*?)```/);
+        if (codeMatch) {
+          const [, language, code] = codeMatch;
+          formattedContent = (
+            <div className="bg-slate-800/60 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-slate-400">{language || 'Code'}</span>
+              </div>
+              <code className="text-sm text-slate-300 font-mono block whitespace-pre-wrap">{code.trim()}</code>
+            </div>
+          );
+        }
+      }
+
+      return (
+        <div key={index} className="mb-4 border-b border-slate-700/30 pb-4 last:border-b-0">
+          <button
+            className="flex items-center w-full text-lg font-semibold text-slate-300 mb-2 hover:text-purple-400 transition-colors duration-200"
+            onClick={() => toggleSection(doc.id, section.title)}
+          >
+            {isExpanded ? <ChevronUp className="w-5 h-5 mr-2" /> : <ChevronDown className="w-5 h-5 mr-2" />}
+            {section.title}
+          </button>
+          {isExpanded && (
+            <div className="bg-slate-900/30 rounded-lg p-4">
+              {isCodeSection && typeof formattedContent !== 'string' ? (
+                formattedContent
+              ) : (
+                <p className="text-slate-300 text-sm leading-relaxed">{formattedContent}</p>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    });
   };
 
   return (
     <div className="fixed top-0 right-0 bottom-0 left-72 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white overflow-y-auto">
-      {/* Animated Background Pattern */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-teal-500/10 animate-pulse"></div>
         <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-purple-500/5 to-blue-500/5 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-500/5 to-teal-500/5 rounded-full blur-3xl"></div>
       </div>
 
-      {/* Header */}
       <div className="relative bg-slate-800/60 backdrop-blur-xl border-b border-slate-700/50 shadow-2xl">
         <div className="px-8 py-6">
           <div className="flex items-center justify-between">
@@ -230,7 +226,7 @@ const handleSubmit = (event) => {
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-teal-400 bg-clip-text text-transparent drop-shadow-sm">
                   Auto Docstrings
                 </h1>
-                <p className="text-slate-400 mt-2 text-lg font-medium">AI-powered documentation generation for your codebase</p>
+                <p className="text-slate-400 mt-2 text-lg font-medium">Comprehensive documentation for your codebase</p>
               </div>
             </div>
             <div className="flex items-center space-x-8">
@@ -251,22 +247,28 @@ const handleSubmit = (event) => {
                   <span className="text-slate-400">Lines</span>
                 </div>
               </div>
+              <button
+                onClick={downloadDocsAsPDF}
+                disabled={!generatedDocs.length}
+                className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 disabled:from-slate-600 disabled:to-slate-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center space-x-2 shadow-lg ring-1 ring-white/10 hover:shadow-xl hover:scale-105 disabled:hover:scale-100"
+              >
+                <Download className="w-5 h-5" />
+                <span>Download PDF</span>
+              </button>
             </div>
           </div>
         </div>
       </div>
 
       <div className="relative px-8 py-8">
-        {/* Control Panel */}
         <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-8 mb-10 shadow-2xl ring-1 ring-white/5">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Repository Input */}
             <div>
               <label className="block text-sm font-semibold text-slate-300 mb-3">
                 Repository
               </label>
               <div className="relative group">
-                <GitBranch className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-purple-400 transition-colors" />
+                <FileText className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-purple-400 transition-colors" />
                 <input
                   type="text"
                   value={repo}
@@ -276,8 +278,6 @@ const handleSubmit = (event) => {
                 />
               </div>
             </div>
-
-            {/* Generate Button */}
             <div>
               <label className="block text-sm font-semibold text-slate-300 mb-3">
                 Action
@@ -301,13 +301,16 @@ const handleSubmit = (event) => {
               </button>
             </div>
           </div>
+          {error && (
+            <div className="mt-4 bg-red-500/20 border border-red-500/50 rounded-xl p-4 text-red-300">
+              {error}
+            </div>
+          )}
         </div>
 
-        {/* Generated Documentation List */}
         <div className="space-y-8">
           {generatedDocs.map((doc) => (
             <div key={doc.id} className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 overflow-hidden shadow-2xl ring-1 ring-white/5 hover:ring-white/10 transition-all duration-300">
-              {/* Documentation Header */}
               <div className="p-8 border-b border-slate-700/50 bg-gradient-to-r from-slate-800/50 to-slate-700/30">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-5">
@@ -341,38 +344,40 @@ const handleSubmit = (event) => {
                     >
                       <Copy className="w-5 h-5" />
                     </button>
-                    <span className="bg-emerald-400/20 text-emerald-400 px-4 py-2 rounded-xl text-sm font-semibold border border-emerald-400/30">
+                    <span className={`px-4 py-2 rounded-xl text-sm font-semibold border ${doc.status === 'completed' ? 'bg-emerald-400/20 text-emerald-400 border-emerald-400/30' : 'bg-red-400/20 text-red-400 border-red-400/30'}`}>
                       {doc.status}
                     </span>
                   </div>
                 </div>
               </div>
-
-              {/* Functions Overview */}
               <div className="p-8 border-b border-slate-700/50 bg-slate-800/30">
                 <h4 className="text-lg font-semibold text-slate-300 mb-4 flex items-center space-x-2">
-                  <Zap className="w-5 h-5 text-yellow-400" />
-                  <span>Functions Documented</span>
+                  <Code className="w-5 h-5 text-yellow-400" />
+                  <span>Main Components</span>
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {doc.functions.map((func, index) => (
-                    <div key={index} className="bg-slate-700/30 rounded-2xl p-4 border border-slate-600/30 backdrop-blur-sm">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <div className="bg-purple-500/20 p-2 rounded-lg">
-                          <Code className="w-4 h-4 text-purple-400" />
+                  {doc.functions.length ? (
+                    doc.functions.map((func, index) => (
+                      <div key={index} className="bg-slate-700/30 rounded-2xl p-4 border border-slate-600/30 backdrop-blur-sm">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <div className="bg-purple-500/20 p-2 rounded-lg">
+                            <Code className="w-4 h-4 text-purple-400" />
+                          </div>
+                          <span className="font-mono text-purple-300 font-semibold">{func.name}</span>
                         </div>
-                        <span className="font-mono text-purple-300 font-semibold">{func.name}</span>
+                        <p className="text-slate-400 text-sm mb-2">{func.description}</p>
+                        {func.example && (
+                          <div className="bg-slate-800/60 rounded-lg p-2">
+                            <code className="text-xs text-slate-300 font-mono">{func.example}</code>
+                          </div>
+                        )}
                       </div>
-                      <p className="text-slate-400 text-sm mb-2">{func.description}</p>
-                      <div className="bg-slate-800/60 rounded-lg p-2">
-                        <code className="text-xs text-slate-300 font-mono">{func.example}</code>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-slate-400 text-sm">None</p>
+                  )}
                 </div>
               </div>
-
-              {/* Full Documentation */}
               <div className="p-8">
                 <div className="flex items-center justify-between mb-6">
                   <h4 className="text-lg font-semibold text-slate-300 flex items-center space-x-2">
@@ -380,16 +385,12 @@ const handleSubmit = (event) => {
                     <span>Generated Documentation</span>
                   </h4>
                 </div>
-                
                 <div className="bg-slate-900/50 rounded-2xl p-6 border border-slate-600/30 backdrop-blur-sm">
-                  <pre className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap font-mono overflow-x-auto">
-                    {doc.documentation}
-                  </pre>
+                  {renderDocumentation(doc)}
                 </div>
               </div>
             </div>
           ))}
-
           {generatedDocs.length === 0 && !isLoading && (
             <div className="text-center py-16">
               <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-12 shadow-2xl ring-1 ring-white/5">

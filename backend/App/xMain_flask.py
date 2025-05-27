@@ -6,11 +6,15 @@ from commit_analyzer import analyze_commit
 from doc_generator import generate_docs
 from security import scan_security
 from git_history import generate_history_summary
-from onboarding import onboarding_assistant
+from onboarding import onboarding_assistant, fetch_file_content, generate_file_description
+from utils import github_api_get
 from activity_notifier import activity_notifier
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for React frontend
+CORS(app)
 
 @app.route("/api/features", methods=["GET"])
 def get_features():
@@ -26,11 +30,52 @@ def get_features():
     ]
     return jsonify({"features": features})
 
+@app.route("/api/file-content", methods=["POST"])
+def get_file_content():
+    try:
+        data = request.get_json()
+        repo = data.get("repo", "")
+        branch = data.get("branch", "main")
+        path = data.get("path", "")
+        logging.debug(f"Fetching content for {repo}/{path}, branch {branch}")
+
+        if not repo or "/" not in repo or not path:
+            return jsonify({"error": "Missing or invalid repo or path"}), 400
+
+        content = fetch_file_content(repo, path, branch)
+        if not content:
+            return jsonify({"error": f"Could not fetch content for {path}"}), 404
+
+        return jsonify({"content": content})
+    except Exception as e:
+        logging.error(f"Error in get_file_content: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/analyze-file", methods=["POST"])
+def analyze_file():
+    try:
+        data = request.get_json()
+        repo = data.get("repo", "")
+        file_path = data.get("file_path", "")
+        content = data.get("content", "")
+        logging.debug(f"Analyzing file {repo}/{file_path}")
+
+        if not repo or "/" not in repo or not file_path or not content:
+            return jsonify({"error": "Missing or invalid repo, file_path, or content"}), 400
+
+        analysis = generate_file_description(repo, file_path, content)
+        return jsonify({"result": analysis})
+    except Exception as e:
+        logging.error(f"Error in analyze_file: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/api/execute/<int:feature_id>", methods=["POST"])
 def execute_feature(feature_id):
     try:
         data = request.get_json()
         repo = data.get("repo", "")
+        branch = data.get("branch", "main")
+        logging.debug(f"Executing feature {feature_id} for repo {repo}, branch {branch}")
         if not repo or "/" not in repo:
             return jsonify({"error": "Invalid repository format. Use 'owner/repo'"}), 400
 
@@ -39,7 +84,7 @@ def execute_feature(feature_id):
 
         result = None
         if feature_id == 1:
-            result = review_pr(repo)  # Adjust if review_pr doesn't return data
+            result = review_pr(repo)
         elif feature_id == 2:
             result = get_productivity_metrics(repo)
         elif feature_id == 3:
@@ -51,17 +96,18 @@ def execute_feature(feature_id):
         elif feature_id == 6:
             result = generate_history_summary(repo)
         elif feature_id == 7:
-            result = onboarding_assistant(repo)
+            result = onboarding_assistant(repo, branch)
         elif feature_id == 8:
             result = activity_notifier(repo)
 
-        # Handle cases where scripts don't return data
         if result is None:
+            logging.warning(f"Feature {feature_id} returned None")
             result = {"status": "Feature executed, check server logs or notifications.json"}
 
+        logging.debug(f"Returning result: {result}")
         return jsonify({"result": result})
-
     except Exception as e:
+        logging.error(f"Error in execute_feature: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":

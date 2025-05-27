@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   BarChart3,
   Clock,
@@ -7,7 +7,6 @@ import {
   Code,
   TrendingUp,
   Activity,
-  Calendar,
   Target,
   Zap,
   ChevronUp,
@@ -17,57 +16,86 @@ import {
   Minus,
   GitMerge,
   AlertCircle,
-  CheckCircle2,
   Timer,
   Sparkles,
-  Brain,
-  FileText,
   Shield,
   Star,
-  Eye,
-  GitBranch
+  Eye
 } from 'lucide-react';
 
 const InsightsDashboard = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [repoInput, setRepoInput] = useState('facebook/react');
-  const [currentRepo, setCurrentRepo] = useState('facebook/react');
+  const [repoInput, setRepoInput] = useState('');
+  const [currentRepo, setCurrentRepo] = useState('');
   const [metrics, setMetrics] = useState({
-    avgTurnaroundTime: 45.7,
-    avgTurnaroundDays: 1.9,
-    totalMergedPRs: 156,
-    totalLinesAdded: 47820,
-    totalLinesDeleted: 23410,
-    netLinesChanged: 24410,
-    uniqueContributors: 23,
-    avgChangesPerPR: 455,
-    codeQualityScore: 4.2,
-    teamCollaboration: 87,
-    deploymentSuccess: 94.5
+    avgTurnaroundHours: 0,
+    avgTurnaroundDays: 0,
+    totalMergedPRs: 0,
+    totalLinesAdded: 0,
+    totalLinesDeleted: 0,
+    netLinesChanged: 0,
+    uniqueContributors: 0,
+    avgChangesPerPR: 0,
+    codeQualityScore: 0,
+    teamCollaboration: 0,
+    testCoverage: 0,
+    securityScore: '',
+    codeComplexity: '',
+    mostActiveContributor: '',
+    fastestReviewTime: 0,
+    recentActivities: []
   });
-  
-  const [timeRange, setTimeRange] = useState('30d');
-  const [stats, setStats] = useState({ 
-    totalRepos: 12, 
-    activeProjects: 8, 
-    totalInsights: 234 
-  });
+  const [error, setError] = useState('');
 
-  const handleAnalyzeRepo = () => {
-    if (repoInput.trim() && repoInput.includes('/')) {
-      setIsLoading(true);
-      setCurrentRepo(repoInput.trim());
-      
-      // Simulate API call
-      setTimeout(() => {
-        setMetrics(prev => ({
-          ...prev,
-          totalMergedPRs: Math.floor(Math.random() * 200) + 100,
-          uniqueContributors: Math.floor(Math.random() * 30) + 15,
-          avgTurnaroundTime: Math.floor(Math.random() * 20) + 30
-        }));
-        setIsLoading(false);
-      }, 2000);
+  const handleAnalyzeRepo = async () => {
+    if (!repoInput.trim() || !repoInput.includes('/')) {
+      setError('Please enter a valid repository in format: owner/repo');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    setCurrentRepo(repoInput.trim());
+
+    try {
+      const response = await fetch('http://localhost:5000/api/execute/2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repo: repoInput.trim() })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch metrics');
+      }
+
+      const data = await response.json();
+      if (data.result && !data.result.error) {
+        setMetrics({
+          avgTurnaroundHours: data.result.avg_turnaround_hours || 0,
+          avgTurnaroundDays: data.result.avg_turnaround_days || 0,
+          totalMergedPRs: data.result.total_merged_prs || 0,
+          totalLinesAdded: data.result.total_lines_added || 0,
+          totalLinesDeleted: data.result.total_lines_deleted || 0,
+          netLinesChanged: data.result.net_lines_changed || 0,
+          uniqueContributors: data.result.unique_contributors || 0,
+          avgChangesPerPR: data.result.avg_changes_per_pr || 0,
+          codeQualityScore: data.result.code_quality_score || 0,
+          teamCollaboration: data.result.team_collaboration || 0,
+          testCoverage: data.result.test_coverage || 0,
+          securityScore: data.result.security_score || 'N/A',
+          codeComplexity: data.result.code_complexity || 'N/A',
+          mostActiveContributor: data.result.most_active_contributor || 'N/A',
+          fastestReviewTime: data.result.fastest_review_time || 0,
+          recentActivities: data.result.recent_activities || []
+        });
+      } else {
+        throw new Error(data.result.error || 'No metrics returned');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to fetch productivity metrics');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -110,7 +138,6 @@ const InsightsDashboard = () => {
     <div className="flex items-center space-x-4 p-4 rounded-xl bg-slate-800/40 hover:bg-slate-800/60 transition-all duration-200 border border-slate-700/30 hover:border-slate-600/50">
       <div className={`p-2 rounded-lg ${
         type === 'merge' ? 'bg-emerald-500/20 text-emerald-400' :
-        type === 'review' ? 'bg-blue-500/20 text-blue-400' :
         type === 'open' ? 'bg-amber-500/20 text-amber-400' : 
         'bg-purple-500/20 text-purple-400'
       }`}>
@@ -118,14 +145,13 @@ const InsightsDashboard = () => {
       </div>
       <div className="flex-1">
         <p className="text-white text-sm font-medium">{action}</p>
-        <p className="text-slate-400 text-xs mt-1">by @{user} • {time}</p>
+        <p className="text-slate-400 text-xs mt-1">by @{user} • {new Date(time).toLocaleString()}</p>
       </div>
     </div>
   );
 
   return (
     <div className="fixed top-0 right-0 bottom-0 left-72 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white overflow-y-auto">
-      {/* Animated Background Pattern */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-cyan-500/10 animate-pulse"></div>
         <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-purple-500/5 to-blue-500/5 rounded-full blur-3xl"></div>
@@ -133,7 +159,6 @@ const InsightsDashboard = () => {
         <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-br from-cyan-500/5 to-teal-500/5 rounded-full blur-2xl transform -translate-x-1/2 -translate-y-1/2"></div>
       </div>
 
-      {/* Fixed Header */}
       <div className="relative bg-slate-800/60 backdrop-blur-xl border-b border-slate-700/50 shadow-2xl">
         <div className="px-8 py-6">
           <div className="flex items-center justify-between">
@@ -151,34 +176,13 @@ const InsightsDashboard = () => {
                 <p className="text-slate-400 mt-2 text-lg font-medium">Real-time developer productivity metrics and analytics</p>
               </div>
             </div>
-            <div className="flex items-center space-x-8">
-              <div className="flex items-center space-x-6 text-sm">
-                <div className="flex items-center space-x-3 bg-slate-700/50 px-4 py-2 rounded-xl backdrop-blur-sm">
-                  <Target className="w-5 h-5 text-purple-400" />
-                  <span className="text-slate-200 font-medium">{stats.totalRepos}</span>
-                  <span className="text-slate-400">Repos</span>
-                </div>
-                <div className="flex items-center space-x-3 bg-slate-700/50 px-4 py-2 rounded-xl backdrop-blur-sm">
-                  <Activity className="w-5 h-5 text-blue-400" />
-                  <span className="text-slate-200 font-medium">{stats.activeProjects}</span>
-                  <span className="text-slate-400">Active</span>
-                </div>
-                <div className="flex items-center space-x-3 bg-slate-700/50 px-4 py-2 rounded-xl backdrop-blur-sm">
-                  <Brain className="w-5 h-5 text-cyan-400" />
-                  <span className="text-slate-200 font-medium">{stats.totalInsights}</span>
-                  <span className="text-slate-400">Insights</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
 
       <div className="relative px-8 py-8">
-        {/* Repository Input Section */}
         <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-8 mb-10 shadow-2xl ring-1 ring-white/5">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Repository Input */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
               <label className="block text-sm font-semibold text-slate-300 mb-3">
                 Repository
@@ -195,25 +199,6 @@ const InsightsDashboard = () => {
                 />
               </div>
             </div>
-
-            {/* Time Range */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-300 mb-3">
-                Time Range
-              </label>
-              <select
-                value={timeRange}
-                onChange={(e) => setTimeRange(e.target.value)}
-                className="w-full bg-slate-700/50 border border-slate-600/50 rounded-2xl px-5 py-4 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-300 backdrop-blur-sm"
-              >
-                <option value="7d">Last 7 days</option>
-                <option value="30d">Last 30 days</option>
-                <option value="90d">Last 90 days</option>
-                <option value="1y">Last year</option>
-              </select>
-            </div>
-
-            {/* Analyze Button */}
             <div>
               <label className="block text-sm font-semibold text-slate-300 mb-3">
                 Action
@@ -237,58 +222,52 @@ const InsightsDashboard = () => {
               </button>
             </div>
           </div>
-          
-          <div className="mt-6 flex items-center space-x-2 text-sm">
-            <Target className="w-4 h-4 text-purple-400" />
-            <span className="text-slate-400">Currently analyzing:</span>
-            <span className="text-purple-400 font-semibold">{currentRepo}</span>
-          </div>
+          {currentRepo && (
+            <div className="mt-6 flex items-center space-x-2 text-sm">
+              <Target className="w-4 h-4 text-purple-400" />
+              <span className="text-slate-400">Currently analyzing:</span>
+              <span className="text-purple-400 font-semibold">{currentRepo}</span>
+            </div>
+          )}
+          {error && (
+            <div className="mt-4 bg-red-500/20 border border-red-500/50 rounded-xl p-4 text-red-300 flex items-center space-x-2">
+              <AlertCircle className="w-5 h-5" />
+              <span>{error}</span>
+            </div>
+          )}
         </div>
 
-        {/* Main Metrics Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           <MetricCard
             title="PR Turnaround"
-            value={`${metrics.avgTurnaroundTime}h`}
+            value={`${metrics.avgTurnaroundHours}h`}
             subtitle={`${metrics.avgTurnaroundDays} days average`}
             icon={Timer}
             gradient="#8b5cf6, #3b82f6"
-            trend="down"
-            trendValue="12%"
           />
-          
           <MetricCard
             title="Merged PRs"
             value={metrics.totalMergedPRs.toLocaleString()}
             subtitle="Successfully completed"
             icon={GitMerge}
             gradient="#10b981, #059669"
-            trend="up"
-            trendValue="8%"
           />
-          
           <MetricCard
             title="Code Quality"
             value={metrics.codeQualityScore.toFixed(1)}
             subtitle="Out of 5.0 rating"
             icon={Star}
             gradient="#f59e0b, #d97706"
-            trend="up"
-            trendValue="0.3"
           />
-          
           <MetricCard
             title="Contributors"
             value={metrics.uniqueContributors}
             subtitle="Active developers"
             icon={Users}
             gradient="#ec4899, #be185d"
-            trend="up"
-            trendValue="3"
           />
         </div>
 
-        {/* Secondary Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           <MetricCard
             title="Lines Added"
@@ -297,7 +276,6 @@ const InsightsDashboard = () => {
             icon={Plus}
             gradient="#06d6a0, #10b981"
           />
-          
           <MetricCard
             title="Lines Removed"
             value={metrics.totalLinesDeleted.toLocaleString()}
@@ -305,31 +283,23 @@ const InsightsDashboard = () => {
             icon={Minus}
             gradient="#ef4444, #dc2626"
           />
-          
           <MetricCard
             title="Net Growth"
             value={metrics.netLinesChanged.toLocaleString()}
             subtitle="Overall codebase"
             icon={TrendingUp}
             gradient="#06b6d4, #0891b2"
-            trend="up"
-            trendValue="22%"
           />
-          
           <MetricCard
             title="Velocity Score"
-            value={`${metrics.deploymentSuccess}%`}
-            subtitle="Development speed"
+            value={`${metrics.avgChangesPerPR} lines`}
+            subtitle="Avg per PR"
             icon={Zap}
             gradient="#6366f1, #4f46e5"
-            trend="up"
-            trendValue="5%"
           />
         </div>
 
-        {/* Detailed Analytics Section */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
-          {/* Team Performance */}
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-600 opacity-20 group-hover:opacity-40 transition duration-500 rounded-3xl blur"></div>
             <div className="relative bg-slate-800/60 backdrop-blur-xl rounded-3xl p-8 border border-slate-700/50 shadow-2xl ring-1 ring-white/5">
@@ -339,18 +309,15 @@ const InsightsDashboard = () => {
                 </div>
                 <h3 className="text-2xl font-bold text-white">Team Performance</h3>
               </div>
-              
               <div className="space-y-6">
                 <div className="flex items-center justify-between p-4 bg-slate-700/30 rounded-xl">
                   <span className="text-slate-300 font-medium">Most Active Contributor</span>
-                  <span className="text-emerald-400 font-semibold">@johnsmith</span>
+                  <span className="text-emerald-400 font-semibold">@{metrics.mostActiveContributor}</span>
                 </div>
-                
                 <div className="flex items-center justify-between p-4 bg-slate-700/30 rounded-xl">
                   <span className="text-slate-300 font-medium">Fastest Review Time</span>
-                  <span className="text-cyan-400 font-semibold">2.3 hours</span>
+                  <span className="text-cyan-400 font-semibold">{metrics.fastestReviewTime}h</span>
                 </div>
-                
                 <div className="p-4 bg-slate-700/30 rounded-xl">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-slate-300 font-medium">Team Collaboration</span>
@@ -367,7 +334,6 @@ const InsightsDashboard = () => {
             </div>
           </div>
 
-          {/* Code Health */}
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-600 opacity-20 group-hover:opacity-40 transition duration-500 rounded-3xl blur"></div>
             <div className="relative bg-slate-800/60 backdrop-blur-xl rounded-3xl p-8 border border-slate-700/50 shadow-2xl ring-1 ring-white/5">
@@ -377,37 +343,33 @@ const InsightsDashboard = () => {
                 </div>
                 <h3 className="text-2xl font-bold text-white">Code Health</h3>
               </div>
-              
               <div className="space-y-6">
                 <div className="flex items-center justify-between p-4 bg-slate-700/30 rounded-xl">
                   <div className="flex items-center space-x-3">
                     <div className="w-3 h-3 bg-emerald-400 rounded-full"></div>
                     <span className="text-slate-300 font-medium">Test Coverage</span>
                   </div>
-                  <span className="text-emerald-400 font-semibold">92%</span>
+                  <span className="text-emerald-400 font-semibold">{metrics.testCoverage}%</span>
                 </div>
-                
                 <div className="flex items-center justify-between p-4 bg-slate-700/30 rounded-xl">
                   <div className="flex items-center space-x-3">
                     <div className="w-3 h-3 bg-amber-400 rounded-full"></div>
                     <span className="text-slate-300 font-medium">Code Complexity</span>
                   </div>
-                  <span className="text-amber-400 font-semibold">Low</span>
+                  <span className="text-amber-400 font-semibold">{metrics.codeComplexity}</span>
                 </div>
-                
                 <div className="flex items-center justify-between p-4 bg-slate-700/30 rounded-xl">
                   <div className="flex items-center space-x-3">
                     <div className="w-3 h-3 bg-cyan-400 rounded-full"></div>
                     <span className="text-slate-300 font-medium">Security Score</span>
                   </div>
-                  <span className="text-cyan-400 font-semibold">A+</span>
+                  <span className="text-cyan-400 font-semibold">{metrics.securityScore}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Recent Activity */}
         <div className="relative group">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 opacity-20 group-hover:opacity-40 transition duration-500 rounded-3xl blur"></div>
           <div className="relative bg-slate-800/60 backdrop-blur-xl rounded-3xl p-8 border border-slate-700/50 shadow-2xl ring-1 ring-white/5">
@@ -423,40 +385,21 @@ const InsightsDashboard = () => {
                 <Eye className="w-4 h-4" />
               </button>
             </div>
-            
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <ActivityItem
-                  time="2 hours ago"
-                  action="PR #247 merged successfully"
-                  user="alice-dev"
-                  type="merge"
-                  icon={GitMerge}
-                />
-                <ActivityItem
-                  time="4 hours ago"
-                  action="Code review completed for PR #245"
-                  user="bob-reviewer"
-                  type="review"
-                  icon={Eye}
-                />
-              </div>
-              <div className="space-y-4">
-                <ActivityItem
-                  time="6 hours ago"
-                  action="New PR #248 opened by team member"
-                  user="charlie-coder"
-                  type="open"
-                  icon={GitPullRequest}
-                />
-                <ActivityItem
-                  time="8 hours ago"
-                  action="Deployment pipeline triggered"
-                  user="system"
-                  type="deploy"
-                  icon={Zap}
-                />
-              </div>
+              {metrics.recentActivities.length > 0 ? (
+                metrics.recentActivities.map((activity, index) => (
+                  <ActivityItem
+                    key={index}
+                    time={activity.time}
+                    action={activity.action}
+                    user={activity.user}
+                    type={activity.type}
+                    icon={activity.type === 'merge' ? GitMerge : GitPullRequest}
+                  />
+                ))
+              ) : (
+                <div className="col-span-2 text-center text-slate-400">No recent activities found.</div>
+              )}
             </div>
           </div>
         </div>

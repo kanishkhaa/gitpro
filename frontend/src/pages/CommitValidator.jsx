@@ -3,22 +3,18 @@ import {
   CheckCircle,
   AlertTriangle,
   XCircle,
-  Search,
   GitCommit,
   FileText,
   Code2,
-  Clock,
   Star,
   Zap,
   Sparkles,
   Activity,
-  Shield,
   Eye,
   MessageSquare,
   TrendingUp,
   Brain,
   GitBranch,
-  Users,
   BarChart3
 } from 'lucide-react';
 
@@ -28,7 +24,6 @@ const CommitValidator = () => {
   const [analysisResult, setAnalysisResult] = useState(null);
   const [error, setError] = useState('');
 
-  // Mock analysis function (replace with actual API call)
   const analyzeCommit = async () => {
     if (!repo || !repo.includes('/')) {
       setError('Please enter a valid repository format (owner/repo)');
@@ -37,53 +32,31 @@ const CommitValidator = () => {
 
     setError('');
     setIsAnalyzing(true);
-    
-    setTimeout(() => {
-      setAnalysisResult({
-        commitSha: 'a1b2c3d',
-        commitMessage: 'Fix user authentication bug and update dependencies',
-        rating: 'Good',
-        score: 8.5,
-        analysis: {
-          messageAccuracy: {
-            score: 9,
-            description: 'Commit message accurately describes the changes made',
-            status: 'good'
-          },
-          messagePractices: {
-            score: 8,
-            description: 'Follows conventional commit format with clear, concise description',
-            status: 'good'
-          },
-          changesCohesion: {
-            score: 8,
-            description: 'Changes are focused and logically grouped together',
-            status: 'good'
-          }
-        },
-        suggestions: [
-          'Consider breaking dependency updates into a separate commit',
-          'Add more specific details about which authentication bug was fixed'
-        ],
-        stats: {
-          filesChanged: 5,
-          additions: 127,
-          deletions: 43,
-          complexity: 'Medium'
-        },
-        diff: `@@ -15,7 +15,10 @@ def authenticate_user(username, password):
--    if not user or user.password != password:
-+    if not user or not check_password_hash(user.password, password):
-         return None
-+    
-+    # Update last login timestamp
-+    user.last_login = datetime.now()
-+    db.session.commit()
-     
-     return user`
+    setAnalysisResult(null);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/execute/3', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repo: repo.trim() })
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to analyze commit');
+      }
+
+      const data = await response.json();
+      if (data.result && !data.result.error) {
+        setAnalysisResult(data.result);
+      } else {
+        throw new Error(data.result.error || 'No analysis returned');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to analyze commit');
+    } finally {
       setIsAnalyzing(false);
-    }, 2000);
+    }
   };
 
   const getRatingColor = (rating) => {
@@ -139,25 +112,6 @@ const CommitValidator = () => {
                 <p className="text-slate-400 mt-2 text-lg font-medium">AI-driven insights to ensure commit messages match code changes</p>
               </div>
             </div>
-            <div className="flex items-center space-x-8">
-              <div className="flex items-center space-x-6 text-sm">
-                <div className="flex items-center space-x-3 bg-slate-700/50 px-4 py-2 rounded-xl backdrop-blur-sm">
-                  <GitCommit className="w-5 h-5 text-purple-400" />
-                  <span className="text-slate-200 font-medium">12,489</span>
-                  <span className="text-slate-400">Analyzed</span>
-                </div>
-                <div className="flex items-center space-x-3 bg-slate-700/50 px-4 py-2 rounded-xl backdrop-blur-sm">
-                  <TrendingUp className="w-5 h-5 text-emerald-400" />
-                  <span className="text-slate-200 font-medium">94.2%</span>
-                  <span className="text-slate-400">Accuracy</span>
-                </div>
-                <div className="flex items-center space-x-3 bg-slate-700/50 px-4 py-2 rounded-xl backdrop-blur-sm">
-                  <Shield className="w-5 h-5 text-amber-400" />
-                  <span className="text-slate-200 font-medium">1,247</span>
-                  <span className="text-slate-400">Issues</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -179,6 +133,7 @@ const CommitValidator = () => {
                   onChange={(e) => setRepo(e.target.value)}
                   placeholder="owner/repository"
                   className="w-full bg-slate-700/50 border border-slate-600/50 rounded-2xl px-12 py-4 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-300 backdrop-blur-sm"
+                  onKeyPress={(e) => e.key === 'Enter' && analyzeCommit()}
                 />
               </div>
               
@@ -234,7 +189,7 @@ const CommitValidator = () => {
                       <div className="flex items-center space-x-6 text-sm text-slate-400">
                         <span className="flex items-center space-x-2 bg-slate-700/50 px-3 py-1 rounded-lg">
                           <GitCommit className="w-4 h-4" />
-                          <span>SHA: {analysisResult.commitSha}</span>
+                          <span>SHA: {analysisResult.commitSha.slice(0, 7)}</span>
                         </span>
                         <span className="flex items-center space-x-2 bg-slate-700/50 px-3 py-1 rounded-lg">
                           <BarChart3 className="w-4 h-4" />
@@ -261,7 +216,7 @@ const CommitValidator = () => {
                     <div className="flex-1">
                       <p className="text-slate-300 text-sm font-medium mb-2">Commit Message:</p>
                       <p className="text-white text-lg font-mono leading-relaxed bg-slate-800/60 p-4 rounded-xl border border-slate-600/30">
-                        "{analysisResult.commitMessage}"
+                        {analysisResult.commitMessage}
                       </p>
                     </div>
                   </div>
@@ -372,26 +327,32 @@ const CommitValidator = () => {
               </div>
               
               <div className="p-6">
-                <div className="space-y-4">
-                  {analysisResult.suggestions.map((suggestion, index) => (
-                    <div
-                      key={index}
-                      className="flex items-start space-x-4 bg-slate-700/30 rounded-xl p-5 border border-slate-600/30 hover:border-amber-500/30 transition-all duration-300 transform hover:scale-102"
-                    >
-                      <div className="bg-gradient-to-r from-amber-400 to-orange-400 p-2 rounded-full flex-shrink-0 shadow-lg">
-                        <span className="text-white text-sm font-bold">{index + 1}</span>
+                {analysisResult.suggestions && analysisResult.suggestions.length > 0 ? (
+                  <div className="space-y-4">
+                    {analysisResult.suggestions.map((suggestion, index) => (
+                      <div
+                        key={index}
+                        className="flex items-start space-x-4 bg-slate-700/30 rounded-xl p-5 border border-slate-600/30 hover:border-amber-500/30 transition-all duration-300 transform hover:scale-102"
+                      >
+                        <div className="bg-gradient-to-r from-amber-400 to-orange-400 p-2 rounded-full flex-shrink-0 shadow-lg">
+                          <span className="text-white text-sm font-bold">{index + 1}</span>
+                        </div>
+                        <p className="text-slate-200 leading-relaxed">{suggestion}</p>
                       </div>
-                      <p className="text-slate-200 leading-relaxed">{suggestion}</p>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-slate-400 py-4">
+                    No suggestions provided for this commit.
+                  </div>
+                )}
               </div>
             </div>
           </div>
         ) : (
           <div className="text-center py-16">
             <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 p-12 shadow-2xl ring-1 ring-white/5">
-              <div className="bg-gradient-to-br from-purple-500/20 to-blue-500/20 p-6 rounded-3xl w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+              <div className="bg-gradient-to-br from-purple-500/20 to-blue-500/20 p-6 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
                 <Brain className="w-12 h-12 text-purple-400" />
               </div>
               <h3 className="text-2xl font-bold text-slate-300 mb-3">No Analysis Yet</h3>
